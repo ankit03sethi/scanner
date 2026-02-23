@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Barcode Scanner</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a1a2e">
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#eee;min-height:100vh;overflow-x:hidden}
+    .header{background:linear-gradient(135deg,#16213e,#0f3460);padding:14px 20px;text-align:center}
+    .header h1{font-size:18px;font-weight:600}
+    .header .sub{font-size:11px;color:#8899aa;margin-top:3px}
+    .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+    .dot.on{background:#39ff14}.dot.off{background:#dc2f02}
+
+    /* Pages */
+    .page{display:none;margin:10px}
+    .page.active{display:block}
+
+    /* Settings */
+    .setup{background:#16213e;padding:16px;border-radius:12px;border:1px solid #0f3460}
+    .setup label{font-size:13px;color:#8899aa;display:block;margin-bottom:6px}
+    .setup input{width:100%;padding:12px;border:1px solid #0f3460;border-radius:8px;background:#1a1a2e;color:#eee;font-size:14px;outline:none}
+    .hint{font-size:11px;color:#667;margin-top:6px}
+    .save-btn{width:100%;padding:12px;margin-top:12px;background:#39ff14;color:#1a1a2e;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer}
+
+    /* Product Summary */
+    .total-box{background:linear-gradient(135deg,#0f3460,#16213e);padding:20px;border-radius:12px;text-align:center;margin-bottom:12px}
+    .total-num{font-size:42px;font-weight:700;color:#39ff14}
+    .total-label{font-size:13px;color:#8899aa;margin-top:4px}
+    .total-nfdp{font-size:14px;margin-top:6px;font-weight:600}
+    .nf-tag{color:#dc2f02}
+    .dp-tag{color:#e09f3e}
+    .product-list{list-style:none}
+    .product-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#16213e;border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid #0f3460;transition:all 0.2s}
+    .product-item:active{transform:scale(0.98);border-color:#39ff14}
+    .product-name{font-size:22px;font-weight:600}
+    .product-count{font-size:20px;font-weight:700;color:#39ff14}
+    .product-nfdp{font-size:12px;font-weight:600;margin-top:2px}
+    .product-arrow{color:#555;font-size:18px}
+    .loading-page{text-align:center;padding:40px}
+    .spinner{width:36px;height:36px;border:3px solid #333;border-top-color:#39ff14;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .settings-link{text-align:center;margin-top:16px}
+    .settings-link button{background:none;border:1px solid #0f3460;color:#8899aa;padding:8px 20px;border-radius:8px;font-size:12px;cursor:pointer}
+
+    /* Company Page */
+    .company-header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#0f3460,#16213e);padding:16px;border-radius:12px;margin-bottom:12px}
+    .company-header-left{flex:1}
+    .company-product-name{font-size:28px;font-weight:700;color:#fff}
+    .company-product-count{font-size:16px;color:#39ff14;font-weight:600;margin-top:4px}
+    .company-nfdp{font-size:13px;font-weight:600;margin-top:2px}
+    .scan-all-btn{background:linear-gradient(135deg,#39ff14,#00e676);color:#1a1a2e;border:none;border-radius:10px;padding:12px 20px;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}
+    .company-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#16213e;border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid #0f3460;transition:all 0.2s}
+    .company-item:active{transform:scale(0.98);border-color:#39ff14}
+    .company-name{font-size:20px;font-weight:600}
+    .company-count{font-size:20px;font-weight:700;color:#39ff14}
+
+    /* Scanner Page */
+    .back-btn{background:none;border:none;color:#39ff14;font-size:14px;font-weight:600;cursor:pointer;padding:8px 0;margin-bottom:8px}
+    .counter-box{background:#16213e;padding:12px 16px;border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .counter-product{font-size:16px;font-weight:600}
+    .counter-nums{font-size:22px;font-weight:700;color:#39ff14}
+    .counter-nfdp{font-size:12px;font-weight:600;margin-top:2px;text-align:right}
+    .counter-label{font-size:11px;color:#8899aa}
+    .scanner-box{margin:0 0 8px;border-radius:12px;overflow:hidden;background:#000;min-height:280px;position:relative}
+    #reader{width:100%;min-height:280px}
+    .controls{display:flex;gap:8px;margin:0 0 8px}
+    .btn{flex:1;padding:12px;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+    .btn-go{background:linear-gradient(135deg,#39ff14,#00e676);color:#1a1a2e;font-weight:700}
+    .btn-stop{background:#333;color:#ccc}
+    .manual{display:flex;gap:8px;margin:0 0 8px}
+    .manual input{flex:1;padding:10px;border:1px solid #0f3460;border-radius:8px;background:#1a1a2e;color:#eee;font-size:14px;outline:none}
+    .manual button{padding:10px 16px;background:#0f3460;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer}
+    .loading{display:none;text-align:center;padding:16px}
+    .result{padding:14px;border-radius:12px;text-align:center;display:none;animation:slideUp .3s ease;margin:0 0 8px}
+    @keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+    .result.ok{background:linear-gradient(135deg,#0a3d1e,#1b5e3a);border:2px solid #39ff14}
+    .result.no{background:linear-gradient(135deg,#6a040f,#9d0208);border:2px solid #dc2f02}
+    .result.duplicate{background:linear-gradient(135deg,#5a3e00,#7c5800);border:2px solid #e09f3e}
+    .result.nf-duplicate{background:linear-gradient(135deg,#5a1a00,#7c2800);border:2px solid #ff6b35}
+    .result.error{background:linear-gradient(135deg,#333,#555);border:2px solid #888}
+    .r-row{display:flex;align-items:center;justify-content:center;gap:10px}
+    .r-icon{font-size:24px}
+    .r-status{font-size:28px;font-weight:700}
+    .r-details{font-size:24px;color:#fff;margin-top:6px;font-weight:600}
+    .r-code{font-size:11px;color:#aaa;margin-top:4px;font-family:monospace}
+    @keyframes vib{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+    .vib{animation:vib .15s ease 3}
+
+    /* Barcode Lists */
+    .list-section{margin-top:8px}
+    .list-header{font-size:13px;color:#8899aa;font-weight:600;margin-bottom:6px;padding:0 4px}
+    .bc-list{max-height:250px;overflow-y:auto}
+    .bc-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#16213e;border-radius:6px;margin-bottom:4px;font-size:12px;font-family:monospace;color:#ccc}
+    .bc-item.scanned{background:#1b4332;color:#39ff14;text-decoration:line-through;opacity:0.6}
+    .bc-item.nf-item{background:#3d0a0a;color:#dc2f02;border:1px solid #6a040f}
+    .bc-item.dp-item{background:#3d2e00;color:#e09f3e;border:1px solid #7c5800}
+    .bc-detail{font-size:11px;color:#8899aa;font-family:-apple-system,sans-serif;max-width:50%;text-align:right}
+    .origin-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;display:inline-block}
+    .origin-tag.tag-scanned{background:#1b4332;color:#39ff14}
+    .origin-tag.tag-nf{background:#3d0a0a;color:#dc2f02}
+
+    /* Save confirmation buttons */
+    .save-confirm-area{margin-top:10px;display:flex;gap:8px;justify-content:center}
+    .save-confirm-btn{padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s}
+    .save-confirm-btn:active{transform:scale(0.95)}
+    .save-confirm-btn.save-nf{background:#dc2f02;color:#fff}
+    .save-confirm-btn.save-dp{background:#e09f3e;color:#1a1a2e}
+    .save-confirm-btn.save-nfdp{background:#ff6b35;color:#fff}
+    .save-confirm-btn.skip-btn{background:#333;color:#aaa;border:1px solid #555}
+
+    /* Person Picker */
+    .person-picker-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(10,10,30,0.95);z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:12px}
+    .person-picker-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:6px}
+    .person-picker-sub{font-size:13px;color:#8899aa;margin-bottom:16px}
+    .person-picker-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:280px}
+    .person-btn{width:60px;height:60px;border-radius:12px;border:2px solid #0f3460;background:#16213e;color:#39ff14;font-size:24px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+    .person-btn:active{transform:scale(0.9);border-color:#39ff14;background:#0f3460}
+
+    /* Close Scanner Button */
+    .close-scanner-btn{width:100%;padding:12px;border:none;border-radius:10px;background:#dc2f02;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;display:none}
+    .close-scanner-btn:active{transform:scale(0.98);opacity:0.8}
+
+    /* Person badge */
+    .person-badge{display:inline-block;background:#0f3460;color:#39ff14;font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;margin-left:8px}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Barcode Scanner</h1>
+    <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Not configured</span></div>
+  </div>
+
+  <!-- PAGE: SETTINGS -->
+  <div class="page" id="page-settings">
+    <div class="setup">
+      <label>Google Apps Script Web App URL</label>
+      <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
+      <div class="hint">Paste the URL from Deploy > Web App in your Google Sheet's Apps Script</div>
+      <button class="save-btn" onclick="saveUrl()">Save & Connect</button>
+    </div>
+  </div>
+
+  <!-- PAGE: PRODUCT SUMMARY -->
+  <div class="page" id="page-products">
+    <div class="loading-page" id="productsLoading"><div class="spinner"></div><div>Loading products...</div></div>
+    <div id="productsContent" style="display:none">
+      <div class="total-box" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="flex:1;text-align:center">
+          <div class="total-num" id="totalCount">0</div>
+          <div class="total-label">Scanned / Total</div>
+          <div class="total-nfdp" id="totalNFDP"></div>
+        </div>
+        <button class="scan-all-btn" onclick="scanAllGlobal()">Scan All</button>
+      </div>
+      <ul class="product-list" id="productList"></ul>
+    </div>
+    <div class="settings-link"><button onclick="showPage('settings')">Settings</button></div>
+  </div>
+
+  <!-- PAGE: COMPANY LIST -->
+  <div class="page" id="page-companies">
+    <button class="back-btn" onclick="goBackToProducts()">&larr; Back to Products</button>
+    <div class="loading-page" id="companiesLoading"><div class="spinner"></div><div>Loading companies...</div></div>
+    <div id="companiesContent" style="display:none">
+      <div class="company-header">
+        <div class="company-header-left">
+          <div class="company-product-name" id="companyProductName">-</div>
+          <div class="company-product-count" id="companyProductCount">0 / 0</div>
+          <div class="company-nfdp" id="companyNFDP"></div>
+        </div>
+        <button class="scan-all-btn" onclick="selectCompany('')">Scan All</button>
+      </div>
+      <ul class="product-list" id="companyList"></ul>
+    </div>
+  </div>
+
+  <!-- PAGE: SCANNER -->
+  <div class="page" id="page-scanner">
+    <button class="back-btn" id="scannerBackBtn" onclick="goBack()">&larr; Back</button>
+
+    <!-- Result on top -->
+    <div class="loading" id="loading"><div class="spinner"></div><div>Checking...</div></div>
+    <div class="result" id="resultCard">
+      <div class="r-row">
+        <div class="r-icon" id="rIcon"></div>
+        <div class="r-status" id="rStatus"></div>
+      </div>
+      <div class="r-details" id="rDetails"></div>
+      <div class="r-code" id="rCode"></div>
+      <div class="save-confirm-area" id="saveConfirmArea" style="display:none">
+        <button class="save-confirm-btn" id="saveConfirmBtn" onclick="confirmSave()">Save</button>
+        <button class="save-confirm-btn skip-btn" onclick="skipSave()">Skip</button>
+      </div>
+    </div>
+
+    <!-- Counter -->
+    <div class="counter-box">
+      <div>
+        <div class="counter-product" id="counterProduct">-</div>
+        <div class="counter-label">Selected Product</div>
+      </div>
+      <div style="text-align:right">
+        <div class="counter-nums"><span id="counterRemaining">0</span> / <span id="counterTotal">0</span></div>
+        <div class="counter-nfdp" id="counterNFDP"></div>
+        <div class="counter-label">Scanned</div>
+      </div>
+    </div>
+
+    <!-- Scanner -->
+    <div class="scanner-box" id="scannerBox">
+      <div id="reader"></div>
+      <div id="tapOverlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10;cursor:pointer;align-items:center;justify-content:center">
+        <div style="color:#fff;font-size:18px;font-weight:700;text-align:center;padding:20px">TAP HERE<br><span style="font-size:13px;font-weight:400;color:#aaa">to scan next barcode</span></div>
+      </div>
+      <!-- Person Picker Overlay -->
+      <div class="person-picker-overlay" id="personPicker">
+        <div class="person-picker-title">Select Scanner Person</div>
+        <div class="person-picker-sub">Tap a number to start scanning</div>
+        <div class="person-picker-grid">
+          <button class="person-btn" onclick="selectPerson(1)">1</button>
+          <button class="person-btn" onclick="selectPerson(2)">2</button>
+          <button class="person-btn" onclick="selectPerson(3)">3</button>
+          <button class="person-btn" onclick="selectPerson(4)">4</button>
+          <button class="person-btn" onclick="selectPerson(5)">5</button>
+          <button class="person-btn" onclick="selectPerson(6)">6</button>
+          <button class="person-btn" onclick="selectPerson(7)">7</button>
+        </div>
+      </div>
+    </div>
+    <div class="controls">
+      <button class="btn btn-go" id="startBtn" onclick="startScan()" style="display:none">Start Scanning</button>
+      <button class="btn btn-stop" id="stopBtn" onclick="stopScan()" style="display:none">Stop</button>
+    </div>
+    <button class="close-scanner-btn" id="closeScannerBtn" onclick="closeScanner()">Close Scanner</button>
+    <div class="manual">
+      <input type="text" id="manualCode" placeholder="Or type barcode manually...">
+      <button onclick="doManual()">Check</button>
+    </div>
+
+    <!-- Remaining barcodes list -->
+    <div class="list-section">
+      <div class="list-header" id="remainingHeader">Remaining Barcodes (0)</div>
+      <div class="bc-list" id="remainingList"></div>
+    </div>
+
+    <!-- Scanned items list -->
+    <div class="list-section" style="margin-top:12px">
+      <div class="list-header" id="scannedHeader" style="color:#39ff14">Scanned (0)</div>
+      <div class="bc-list" id="scannedList"></div>
+    </div>
+
+    <!-- Not Found list -->
+    <div class="list-section" style="margin-top:12px">
+      <div class="list-header" id="nfHeader" style="color:#dc2f02">Not Found (0)</div>
+      <div class="bc-list" id="nfList"></div>
+    </div>
+
+    <!-- Duplicate list -->
+    <div class="list-section" style="margin-top:12px">
+      <div class="list-header" id="dpHeader" style="color:#e09f3e">Duplicates (0)</div>
+      <div class="bc-list" id="dpList"></div>
+    </div>
+  </div>
+
+<script>
+var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
+var pendingSave=null; // {barcode, saveStatus, details, origin}
+var currentPerson=''; // person number 1-7 for this scanning session
+var apiUrl=localStorage.getItem('apiUrl')||'';
+var selectedProduct='';
+var selectedCompany='';
+var remainingBarcodes=[];
+var scannedItems=[];
+var nfItems=[];
+var dpItems=[];
+var totalForProduct=0;
+
+window.onload=function(){
+  if(apiUrl){
+    document.getElementById('apiUrl').value=apiUrl;
+    setStatus(true);
+    showPage('products');
+    loadProducts();
+  } else {
+    setStatus(false);
+    showPage('settings');
+  }
+};
+
+// HELPER: Build NF/DP tag string
+function nfdpTag(nf,dp){
+  if(!nf&&!dp) return '';
+  var parts=[];
+  if(nf) parts.push('<span class="nf-tag">NF-'+nf+'</span>');
+  if(dp) parts.push('<span class="dp-tag">DP-'+dp+'</span>');
+  return ' ['+parts.join(', ')+']';
+}
+
+// PAGES
+function showPage(name){
+  var pages=document.querySelectorAll('.page');
+  for(var i=0;i<pages.length;i++) pages[i].className='page';
+  document.getElementById('page-'+name).className='page active';
+}
+
+function saveUrl(){
+  var u=document.getElementById('apiUrl').value.trim();
+  if(!u||!u.startsWith('https://script.google.com/')){alert('Please enter a valid Google Apps Script URL');return}
+  apiUrl=u;localStorage.setItem('apiUrl',u);setStatus(true);
+  showPage('products');
+  loadProducts();
+}
+
+function setStatus(ok){
+  document.getElementById('dot').className='dot '+(ok?'on':'off');
+  document.getElementById('statusTxt').textContent=ok?'Connected to Google Sheets':'Not configured';
+}
+
+// LOAD PRODUCTS
+function loadProducts(){
+  document.getElementById('productsLoading').style.display='block';
+  document.getElementById('productsContent').style.display='none';
+
+  fetch(apiUrl+'?action=summary',{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      document.getElementById('productsLoading').style.display='none';
+      document.getElementById('productsContent').style.display='block';
+      var t=data.total||0;
+      var ts=data.totalScanned||0;
+      document.getElementById('totalCount').textContent=ts+' / '+t;
+      document.getElementById('totalNFDP').innerHTML=nfdpTag(data.totalNF||0,data.totalDP||0);
+
+      var list=document.getElementById('productList');
+      list.innerHTML='';
+      if(data.products){
+        data.products.forEach(function(p){
+          var li=document.createElement('li');
+          li.className='product-item';
+          li.innerHTML='<div><div class="product-name">'+p.name+'</div></div><div style="text-align:right"><div style="font-size:22px;color:#39ff14;font-weight:700">'+(p.scanned||0)+' / '+p.count+'</div><div class="product-nfdp">'+nfdpTag(p.nf||0,p.dp||0)+'</div></div>';
+          li.onclick=function(){openCompanyPage(p.name,p.scanned||0,p.count)};
+          list.appendChild(li);
+        });
+      }
+    })
+    .catch(function(e){
+      document.getElementById('productsLoading').style.display='none';
+      alert('Error loading products. Check API URL.');
+    });
+}
+
+// OPEN COMPANY PAGE
+function openCompanyPage(product,scanned,total){
+  selectedProduct=product;
+  showPage('companies');
+  document.getElementById('companyProductName').textContent=product;
+  document.getElementById('companyProductCount').textContent=scanned+' / '+total;
+  document.getElementById('companyNFDP').innerHTML='';
+  loadCompanies(product);
+}
+
+function loadCompanies(product){
+  document.getElementById('companiesLoading').style.display='block';
+  document.getElementById('companiesContent').style.display='none';
+
+  fetch(apiUrl+'?action=companies&product='+encodeURIComponent(product),{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      document.getElementById('companiesLoading').style.display='none';
+      document.getElementById('companiesContent').style.display='block';
+
+      var totalNF=0,totalDP=0,totalScanned=0,totalCount=0;
+      if(data.companies){
+        data.companies.forEach(function(c){
+          totalNF+=(c.nf||0);
+          totalDP+=(c.dp||0);
+          totalScanned+=(c.scanned||0);
+          totalCount+=c.count;
+        });
+      }
+      document.getElementById('companyProductCount').textContent=totalScanned+' / '+totalCount;
+      document.getElementById('companyNFDP').innerHTML=nfdpTag(totalNF,totalDP);
+
+      var list=document.getElementById('companyList');
+      list.innerHTML='';
+      if(data.companies){
+        data.companies.forEach(function(c){
+          var li=document.createElement('li');
+          li.className='company-item';
+          li.innerHTML='<div><div class="company-name">'+c.name+'</div></div><div style="text-align:right"><div class="company-count">'+(c.scanned||0)+' / '+c.count+'</div><div class="product-nfdp">'+nfdpTag(c.nf||0,c.dp||0)+'</div></div>';
+          li.onclick=function(){selectCompany(c.name)};
+          list.appendChild(li);
+        });
+      }
+    })
+    .catch(function(e){
+      document.getElementById('companiesLoading').style.display='none';
+      alert('Error loading companies.');
+    });
+}
+
+function goBackToProducts(){
+  showPage('products');
+  loadProducts();
+}
+
+// SCAN ALL from home page
+function scanAllGlobal(){
+  selectedProduct='';
+  selectedCompany='';
+  currentPerson='';
+  showPage('scanner');
+  document.getElementById('counterProduct').textContent='All Products';
+  document.getElementById('personPicker').style.display='flex';
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('stopBtn').style.display='none';
+  document.getElementById('closeScannerBtn').style.display='none';
+  document.getElementById('scannerBackBtn').onclick=function(){
+    if(scanner&&isScanning){
+      scanner.stop().then(function(){
+        isScanning=false;
+        document.getElementById('startBtn').style.display='none';
+        document.getElementById('stopBtn').style.display='none';
+        document.getElementById('closeScannerBtn').style.display='none';
+        document.getElementById('reader').innerHTML='';
+      });
+    }
+    document.getElementById('resultCard').style.display='none';
+    document.getElementById('tapOverlay').style.display='none';
+    isPaused=false;
+    currentPerson='';
+    showPage('products');
+    loadProducts();
+  };
+  loadProductData('','');
+}
+
+// SELECT COMPANY (or all)
+function selectCompany(company){
+  selectedCompany=company;
+  currentPerson='';
+  showPage('scanner');
+  var label=selectedProduct+(company?' > '+company:'');
+  document.getElementById('counterProduct').textContent=label;
+  document.getElementById('personPicker').style.display='flex';
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('stopBtn').style.display='none';
+  document.getElementById('closeScannerBtn').style.display='none';
+  document.getElementById('scannerBackBtn').onclick=function(){goBackToCompanies()};
+  loadProductData(selectedProduct,company);
+}
+
+function goBackToCompanies(){
+  if(scanner&&isScanning){
+    scanner.stop().then(function(){
+      isScanning=false;
+      document.getElementById('startBtn').style.display='none';
+      document.getElementById('stopBtn').style.display='none';
+      document.getElementById('closeScannerBtn').style.display='none';
+      document.getElementById('reader').innerHTML='';
+    });
+  }
+  document.getElementById('resultCard').style.display='none';
+  document.getElementById('tapOverlay').style.display='none';
+  isPaused=false;
+  currentPerson='';
+  openCompanyPage(selectedProduct,0,0);
+  loadCompanies(selectedProduct);
+}
+
+function loadProductData(product,company){
+  document.getElementById('remainingList').innerHTML='<div style="text-align:center;padding:16px;color:#555">Loading...</div>';
+  document.getElementById('scannedList').innerHTML='';
+  document.getElementById('nfList').innerHTML='';
+  document.getElementById('dpList').innerHTML='';
+
+  var url=apiUrl+'?action=productdata&product='+encodeURIComponent(product);
+  if(company) url+='&company='+encodeURIComponent(company);
+
+  fetch(url,{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      totalForProduct=data.total||0;
+      remainingBarcodes=data.barcodes||[];
+      scannedItems=data.scannedItems||[];
+      nfItems=data.nfItems||[];
+      dpItems=data.dpItems||[];
+      updateCounter();
+      renderBarcodeList();
+      renderScannedList();
+      renderNFList();
+      renderDPList();
+    })
+    .catch(function(e){
+      document.getElementById('remainingList').innerHTML='<div style="text-align:center;padding:16px;color:#dc2f02">Error loading data</div>';
+    });
+}
+
+function updateCounter(){
+  document.getElementById('counterRemaining').textContent=scannedItems.length;
+  document.getElementById('counterTotal').textContent=totalForProduct;
+  document.getElementById('counterNFDP').innerHTML=nfdpTag(nfItems.length,dpItems.length);
+}
+
+function renderBarcodeList(){
+  document.getElementById('remainingHeader').textContent='Remaining Barcodes ('+remainingBarcodes.length+')';
+  var el=document.getElementById('remainingList');
+  if(!remainingBarcodes.length){el.innerHTML='<div style="text-align:center;padding:16px;color:#39ff14;font-weight:600">All done! No barcodes remaining.</div>';return}
+  el.innerHTML=remainingBarcodes.map(function(b){
+    return '<div class="bc-item"><span>'+b.barcode+'</span><span class="bc-detail">'+b.details+'</span></div>';
+  }).join('');
+}
+
+function renderScannedList(){
+  document.getElementById('scannedHeader').textContent='Scanned ('+scannedItems.length+')';
+  var el=document.getElementById('scannedList');
+  if(!scannedItems.length){el.innerHTML='<div style="text-align:center;padding:12px;color:#555">No scans yet</div>';return}
+  // Already ordered latest first from backend
+  el.innerHTML=scannedItems.map(function(b){
+    return '<div class="bc-item scanned"><span>'+b.barcode+'</span><span class="bc-detail">'+b.details+'</span></div>';
+  }).join('');
+}
+
+function renderNFList(){
+  document.getElementById('nfHeader').textContent='Not Found ('+nfItems.length+')';
+  var el=document.getElementById('nfList');
+  if(!nfItems.length){el.innerHTML='';return}
+  // Already ordered latest first from backend
+  el.innerHTML=nfItems.map(function(b){
+    return '<div class="bc-item nf-item"><span>'+b.barcode+'</span><span class="bc-detail">'+b.details+'</span></div>';
+  }).join('');
+}
+
+function renderDPList(){
+  document.getElementById('dpHeader').textContent='Duplicates ('+dpItems.length+')';
+  var el=document.getElementById('dpList');
+  if(!dpItems.length){el.innerHTML='';return}
+  // Already ordered latest first from backend, with origin tags
+  el.innerHTML=dpItems.map(function(b){
+    var originClass=b.origin==='Scanned'?'tag-scanned':'tag-nf';
+    var originLabel=b.origin==='Scanned'?'Scanned':'NF';
+    return '<div class="bc-item dp-item"><span>'+b.barcode+'<span class="origin-tag '+originClass+'">'+originLabel+'</span></span><span class="bc-detail">'+b.details+'</span></div>';
+  }).join('');
+}
+
+// GO BACK (legacy fallback)
+function goBack(){
+  goBackToCompanies();
+}
+
+// AUDIO
+var AC=window.AudioContext||window.webkitAudioContext;
+var ac=null;
+function beep(t){
+  try{
+    if(!ac)ac=new AC();
+    var o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);g.gain.value=0.5;
+    if(t==='ok'){o.frequency.value=800;o.type='sine'}
+    else if(t==='no'){o.frequency.value=300;o.type='square'}
+    else{o.frequency.value=500;o.type='triangle'}
+    o.start();
+    setTimeout(function(){g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.3);setTimeout(function(){o.stop()},300)},150);
+  }catch(e){}
+}
+function speak(text){try{var u=new SpeechSynthesisUtterance(text);u.volume=1;u.rate=1;u.pitch=1;u.lang='en-US';window.speechSynthesis.speak(u)}catch(e){}}
+
+// SCANNER
+function startScan(){
+  if(!apiUrl){alert('Set API URL in Settings first');return}
+  scanner=new Html5Qrcode("reader");
+  scanner.start(
+    {facingMode:"environment"},
+    {fps:30,qrbox:{width:350,height:220},disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true},
+      formatsToSupport:[
+        Html5QrcodeSupportedFormats.QR_CODE,
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.CODE_93
+      ]
+    },
+    onOk,
+    function(){}
+  ).then(function(){
+    isScanning=true;
+    document.getElementById('startBtn').style.display='none';
+    document.getElementById('stopBtn').style.display='flex';
+    document.getElementById('closeScannerBtn').style.display='block';
+  }).catch(function(err){alert('Camera error: '+err)});
+}
+
+function stopScan(){
+  if(scanner&&isScanning){
+    scanner.stop().then(function(){
+      isScanning=false;
+      document.getElementById('startBtn').style.display='flex';
+      document.getElementById('stopBtn').style.display='none';
+      document.getElementById('closeScannerBtn').style.display='block';
+      document.getElementById('reader').innerHTML='';
+    });
+  }
+}
+
+// PERSON PICKER
+function selectPerson(num){
+  currentPerson=String(num);
+  document.getElementById('personPicker').style.display='none';
+  document.getElementById('counterProduct').innerHTML=document.getElementById('counterProduct').textContent+'<span class="person-badge">Person '+currentPerson+'</span>';
+  startScan();
+}
+
+function closeScanner(){
+  if(scanner&&isScanning){
+    scanner.stop().then(function(){
+      isScanning=false;
+      document.getElementById('reader').innerHTML='';
+      resetScannerUI();
+    }).catch(function(){resetScannerUI()});
+  } else {
+    resetScannerUI();
+  }
+}
+
+function resetScannerUI(){
+  isScanning=false;
+  isPaused=false;
+  currentPerson='';
+  pendingSave=null;
+  document.getElementById('startBtn').style.display='none';
+  document.getElementById('stopBtn').style.display='none';
+  document.getElementById('closeScannerBtn').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('saveConfirmArea').style.display='none';
+  document.getElementById('personPicker').style.display='flex';
+  // Reset counter label (remove person badge)
+  var label=selectedProduct+(selectedCompany?' > '+selectedCompany:'');
+  if(!selectedProduct) label='All Products';
+  document.getElementById('counterProduct').textContent=label;
+}
+
+function onOk(text){
+  if(isPaused||isChecking) return;
+  isChecking=true;
+  isPaused=true;
+  lastBarcode=text;
+  if(navigator.vibrate) navigator.vibrate(100);
+  scanner.pause(true);
+  checkCode(text);
+}
+
+function doManual(){
+  var v=document.getElementById('manualCode').value.trim();
+  if(!v) return;
+  document.getElementById('manualCode').value='';
+  isChecking=true;
+  checkCode(v);
+}
+
+document.getElementById('manualCode').addEventListener('keydown',function(e){
+  if(e.key==='Enter') doManual();
+});
+
+// API CALL
+function checkCode(barcode){
+  if(!apiUrl){alert('Set API URL first');isChecking=false;return}
+  document.getElementById('loading').style.display='block';
+  document.getElementById('resultCard').style.display='none';
+
+  var url=apiUrl+'?barcode='+encodeURIComponent(barcode);
+  if(selectedProduct) url+='&product='+encodeURIComponent(selectedProduct);
+  if(selectedCompany) url+='&company='+encodeURIComponent(selectedCompany);
+  if(currentPerson) url+='&person='+encodeURIComponent(currentPerson);
+
+  fetch(url,{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      document.getElementById('loading').style.display='none';
+      showResult(data);
+      isChecking=false;
+      document.getElementById('tapOverlay').style.display='flex';
+
+      // If FOUND, update local lists
+      if(data.status==='OK'){
+        // Remove from remaining
+        for(var i=0;i<remainingBarcodes.length;i++){
+          if(remainingBarcodes[i].barcode===barcode){
+            remainingBarcodes.splice(i,1);
+            break;
+          }
+        }
+        // Remove from NF list if it was there (re-scan found after NF)
+        for(var i=0;i<nfItems.length;i++){
+          if(nfItems[i].barcode===barcode){
+            nfItems.splice(i,1);
+            break;
+          }
+        }
+        // Update DP items: change origin from NF to Scanned for this barcode
+        for(var i=0;i<dpItems.length;i++){
+          if(dpItems[i].barcode===barcode && dpItems[i].origin==='NF'){
+            dpItems[i].origin='Scanned';
+          }
+        }
+        scannedItems.unshift({barcode:barcode,details:data.details||''});
+        updateCounter();
+        renderBarcodeList();
+        renderScannedList();
+        renderNFList();
+        renderDPList();
+      }
+      // If NOT FOUND — DON'T auto-add, set pendingSave for confirmation
+      if(data.status==='NO'){
+        pendingSave={barcode:barcode,saveStatus:'NF',details:data.message||'Not found in reference',origin:null};
+        showSaveButton('save-nf','Save as Not Found');
+      }
+      // If DUPLICATE — DON'T auto-add, set pendingSave for confirmation
+      if(data.status==='DUPLICATE'){
+        pendingSave={barcode:barcode,saveStatus:'DUPLICATE',details:data.message||'Duplicate scan',origin:data.origin||'Scanned'};
+        showSaveButton('save-dp','Save as Duplicate');
+      }
+      // If NF_DUPLICATE — DON'T auto-add, set pendingSave for confirmation
+      if(data.status==='NF_DUPLICATE'){
+        pendingSave={barcode:barcode,saveStatus:'NF_DUPLICATE',details:data.message||'Not found duplicate',origin:'NF'};
+        showSaveButton('save-nfdp','Save as NF Duplicate');
+      }
+    })
+    .catch(function(e){
+      document.getElementById('loading').style.display='none';
+      showResult({status:'error',barcode:barcode,message:'Connection error.'});
+      isChecking=false;
+      document.getElementById('tapOverlay').style.display='flex';
+    });
+}
+
+// SHOW RESULT
+function showResult(r){
+  var c=document.getElementById('resultCard');
+  var icon=document.getElementById('rIcon');
+  var stat=document.getElementById('rStatus');
+  var details=document.getElementById('rDetails');
+  var code=document.getElementById('rCode');
+  c.className='result';
+
+  if(r.status==='OK'){
+    var parts=(r.details||'Found').split(/[|,]+/);
+    var firstWord=parts[0].trim().split(/\s+/)[0]||'Found';
+    var secondPart=parts.length>1?parts[1].trim():'';
+    c.classList.add('ok');icon.textContent='\u2705';stat.textContent=firstWord;
+    beep('ok');speak(firstWord);if(navigator.vibrate)navigator.vibrate([100,50,100]);
+    details.textContent=secondPart;
+  } else if(r.status==='NO'){
+    c.classList.add('no');icon.textContent='\u274C';stat.textContent='NOT FOUND';
+    beep('no');speak('Not Found');if(navigator.vibrate)navigator.vibrate([300]);c.classList.add('vib');
+    details.textContent=r.details||'';
+  } else if(r.status==='DUPLICATE'){
+    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
+    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
+    details.textContent=r.details||'';
+  } else if(r.status==='NF_DUPLICATE'){
+    c.classList.add('nf-duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='NF DUPLICATE';
+    beep('no');speak('Not Found Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
+    details.textContent=r.details||'';
+  } else {
+    c.classList.add('error');icon.textContent='\u2699\uFE0F';stat.textContent='ERROR';
+    details.textContent=r.details||'';
+  }
+  code.textContent=r.barcode?'Barcode: '+r.barcode:'';
+  c.style.display='block';
+  setTimeout(function(){c.classList.remove('vib')},500);
+}
+
+// SAVE CONFIRMATION
+function showSaveButton(btnClass,btnText){
+  var area=document.getElementById('saveConfirmArea');
+  var btn=document.getElementById('saveConfirmBtn');
+  btn.className='save-confirm-btn '+btnClass;
+  btn.textContent=btnText;
+  area.style.display='flex';
+}
+
+function confirmSave(){
+  if(!pendingSave) return;
+  var ps=pendingSave;
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+
+  // Call backend to save
+  var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson);
+  fetch(url,{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(resp){
+      if(resp.status==='saved'){
+        // Update local lists
+        if(ps.saveStatus==='NF'){
+          var alreadyNF=false;
+          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
+          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details});
+          updateCounter();
+          renderNFList();
+        } else if(ps.saveStatus==='DUPLICATE'){
+          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:ps.origin||'Scanned'});
+          updateCounter();
+          renderDPList();
+        } else if(ps.saveStatus==='NF_DUPLICATE'){
+          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:'NF'});
+          updateCounter();
+          renderDPList();
+        }
+      }
+    })
+    .catch(function(e){
+      alert('Error saving: '+e);
+    });
+}
+
+function skipSave(){
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+}
+
+// TAP TO RESUME
+function resumeScan(){
+  if(!isPaused) return;
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+}
+document.getElementById('tapOverlay').addEventListener('click',resumeScan);
+document.getElementById('scannerBox').addEventListener('click',resumeScan);
+
+// PHONE BACK BUTTON
+var currentPage='products';
+var origShowPage=showPage;
+showPage=function(name){
+  origShowPage(name);
+  currentPage=name;
+  history.pushState({page:name},null,'');
+};
+window.addEventListener('popstate',function(e){
+  if(currentPage==='scanner'){
+    if(!selectedProduct){
+      if(scanner&&isScanning){scanner.stop().then(function(){isScanning=false;document.getElementById('startBtn').style.display='flex';document.getElementById('stopBtn').style.display='none';document.getElementById('reader').innerHTML=''})}
+      document.getElementById('resultCard').style.display='none';
+      document.getElementById('tapOverlay').style.display='none';
+      isPaused=false;
+      origShowPage('products');currentPage='products';loadProducts();
+      history.pushState({page:'products'},null,'');
+    } else {
+      goBackToCompanies();
+      history.pushState({page:'companies'},null,'');
+    }
+  } else if(currentPage==='companies'){
+    goBackToProducts();
+    history.pushState({page:'products'},null,'');
+  } else if(currentPage==='settings'){
+    if(apiUrl){
+      origShowPage('products');
+      currentPage='products';
+      history.pushState({page:'products'},null,'');
+    }
+  } else {
+    history.pushState({page:'products'},null,'');
+  }
+});
+history.replaceState({page:apiUrl?'products':'settings'},null,'');
+</script>
+</body>
+</html>
