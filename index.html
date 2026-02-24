@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Order Scanner</title>
+  <title>Order Scanner v12</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a2e">
@@ -222,6 +222,7 @@
       </div>
       <ul class="product-list" id="productList"></ul>
       <!-- Person Numbers Row -->
+      <div style="text-align:center;color:#fff;font-size:14px;font-weight:600;margin-top:12px;margin-bottom:6px">Person Wise Details</div>
       <div class="person-row" id="personRow">
         <button class="person-row-btn" onclick="openPersonSummary(1)">1</button>
         <button class="person-row-btn" onclick="openPersonSummary(2)">2</button>
@@ -583,24 +584,14 @@ function loadProductsFromData(data){
     });
   }
 }
-function xhrGet(url,onSuccess,onError){
-  var xhr=new XMLHttpRequest();
-  xhr.open('GET',url,true);
-  xhr.onload=function(){
-    if(xhr.status>=200&&xhr.status<400){
-      try{onSuccess(JSON.parse(xhr.responseText))}catch(e){onError(e)}
-    } else {onError(new Error('HTTP '+xhr.status))}
-  };
-  xhr.onerror=function(){onError(new Error('XHR failed'))};
-  xhr.timeout=30000;
-  xhr.ontimeout=function(){onError(new Error('Timeout'))};
-  xhr.send();
+function apiCall(url,onSuccess,onError){
+  fetch(url,{redirect:'follow'}).then(function(r){return r.json()}).then(onSuccess).catch(onError);
 }
 function loadProducts(){
   document.getElementById('productsLoading').style.display='block';
   document.getElementById('productsContent').style.display='none';
   var url=apiUrl+'?action=summary';
-  xhrGet(url,loadProductsFromData,function(e){
+  apiCall(url,loadProductsFromData,function(e){
     document.getElementById('productsLoading').style.display='none';
     document.getElementById('productsContent').style.display='block';
     document.getElementById('productList').innerHTML='<li style="padding:20px;text-align:center;color:#dc2f02">Error loading. Pull down to refresh.</li>';
@@ -622,7 +613,7 @@ function loadCompanies(product){
   document.getElementById('companiesLoading').style.display='block';
   document.getElementById('companiesContent').style.display='none';
 
-  xhrGet(apiUrl+'?action=companies&product='+encodeURIComponent(product),function(data){
+  apiCall(apiUrl+'?action=companies&product='+encodeURIComponent(product),function(data){
       document.getElementById('companiesLoading').style.display='none';
       document.getElementById('companiesContent').style.display='block';
 
@@ -691,7 +682,7 @@ function openPersonSummary(num){
   document.getElementById('personSummaryLoading').style.display='block';
   document.getElementById('personSummaryContent').style.display='none';
 
-  xhrGet(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),function(data){
+  apiCall(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),function(data){
       document.getElementById('personSummaryLoading').style.display='none';
       document.getElementById('personSummaryContent').style.display='block';
       document.getElementById('personPackedTotal').textContent=data.packed||0;
@@ -708,7 +699,7 @@ function openPersonProducts(){
   document.getElementById('personProductsLoading').style.display='block';
   document.getElementById('personProductsContent').style.display='none';
 
-  xhrGet(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),function(data){
+  apiCall(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),function(data){
       document.getElementById('personProductsLoading').style.display='none';
       document.getElementById('personProductsContent').style.display='block';
 
@@ -740,7 +731,7 @@ function openPersonCompanies(product){
   document.getElementById('personCompaniesLoading').style.display='block';
   document.getElementById('personCompaniesContent').style.display='none';
 
-  xhrGet(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),function(data){
+  apiCall(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),function(data){
       document.getElementById('personCompaniesLoading').style.display='none';
       document.getElementById('personCompaniesContent').style.display='block';
 
@@ -853,7 +844,7 @@ function openStatusList(type){
   document.getElementById('statusListLoading').style.display='block';
   document.getElementById('statusListContent').style.display='none';
 
-  xhrGet(apiUrl+'?action=productdata&product=&company=',function(data){
+  apiCall(apiUrl+'?action=productdata&product=&company=',function(data){
       document.getElementById('statusListLoading').style.display='none';
       document.getElementById('statusListContent').style.display='block';
       var items=[];
@@ -972,7 +963,7 @@ function loadProductData(product,company){
   var url=apiUrl+'?action=productdata&product='+encodeURIComponent(product);
   if(company) url+='&company='+encodeURIComponent(company);
 
-  xhrGet(url,function(data){
+  apiCall(url,function(data){
       totalForProduct=data.total||0;
       remainingBarcodes=data.barcodes||[];
       scannedItems=data.scannedItems||[];
@@ -1190,7 +1181,7 @@ function checkCode(barcode){
   if(currentPerson) url+='&person='+encodeURIComponent(currentPerson);
   if(currentChecker) url+='&checker='+encodeURIComponent(currentChecker);
 
-  xhrGet(url,function(data){
+  apiCall(url,function(data){
       document.getElementById('loading').style.display='none';
       showResult(data);
       isChecking=false;
@@ -1303,5 +1294,8 @@ function confirmSave(){
   }
 
   var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson)+'&checker='+encodeURIComponent(currentChecker);
-  xhrGet(url,function(resp){
-      if(resp.status==='saved
+  apiCall(url,function(resp){
+      if(resp.status==='saved'){
+        if(ps.saveStatus==='NF'){
+          var alreadyNF=false;
+          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alread
