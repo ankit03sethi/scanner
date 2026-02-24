@@ -199,7 +199,7 @@
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
       <div class="hint">Paste the URL from Deploy > Web App in your Google Sheet's Apps Script</div>
-      <button class="save-btn" id="saveBtn">Save & Connect</button>
+      <button class="save-btn" onclick="saveUrl()">Save & Connect</button>
       <div id="debugMsg" style="margin-top:8px;font-size:12px;color:#e09f3e;display:none"></div>
     </div>
   </div>
@@ -433,20 +433,12 @@
   </div>
 
 <script>
-try{
-document.getElementById('dot').className='dot off';
-}catch(e){}
-
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
 var pendingSave=null;
 var currentPerson='';
 var currentChecker='';
 var CURRENT_API='https://script.google.com/macros/s/AKfycbykUo_b86ptTWFjiHX0Up9NApfwVBHpum4NKhQu5HKE91VbLNUgpxVj9GMoFUwhxI5t/exec';
 var apiUrl=CURRENT_API;
-try{
-  var storedUrl=localStorage.getItem('apiUrl')||'';
-  if(storedUrl && storedUrl!==CURRENT_API){localStorage.setItem('apiUrl',CURRENT_API)}
-}catch(e){}
 
 var selectedProduct='';
 var selectedCompany='';
@@ -459,17 +451,30 @@ var totalForProduct=0;
 // Person detail page state
 var viewingPerson='';
 var viewingPersonProduct='';
-function initApp(){
+
+function saveNav(pg,ex){try{sessionStorage.setItem('np',pg);if(ex)sessionStorage.setItem('ne',JSON.stringify(ex));else sessionStorage.removeItem('ne')}catch(e){}}
+
+window.onload=function(){
   if(apiUrl){
     document.getElementById('apiUrl').value=apiUrl;
     setStatus(true);
     showPage('products');
     loadProducts();
+    // Restore last page on refresh
+    try{
+      var np=sessionStorage.getItem('np');
+      var ne=sessionStorage.getItem('ne');
+      var ex=ne?JSON.parse(ne):null;
+      if(np==='companies'&&ex&&ex.p){selectedProduct=ex.p;openCompanyPage(ex.p,0,0);loadCompanies(ex.p)}
+      else if(np==='person-summary'&&ex&&ex.n){openPersonSummary(ex.n)}
+      else if(np==='person-products'&&ex&&ex.n){viewingPerson=ex.n;openPersonProducts()}
+      else if(np==='person-companies'&&ex&&ex.n&&ex.p){viewingPerson=ex.n;openPersonCompanies(ex.p)}
+    }catch(e){}
   } else {
     setStatus(false);
     showPage('settings');
   }
-}
+};
 
 // HELPER: Build Not Found / Duplicates tag string
 function nfdpTag(nf,dp){
@@ -566,6 +571,7 @@ function loadProducts(){
 function openCompanyPage(product,scanned,total){
   selectedProduct=product;
   showPage('companies');
+  saveNav('companies',{p:product});
   document.getElementById('companyProductName').textContent=product;
   document.getElementById('companyProductCount').textContent=scanned+'/'+total;
   document.getElementById('companyNFDP').innerHTML='';
@@ -626,13 +632,13 @@ function goHome(){
   selectedCompany='';
   showPage('products');
   loadProducts();
-
+  saveNav('products');
 }
 
 function goBackToProducts(){
   showPage('products');
   loadProducts();
-
+  saveNav('products');
 }
 
 // ==========================================
@@ -642,7 +648,7 @@ function goBackToProducts(){
 function openPersonSummary(num){
   viewingPerson=String(num);
   showPage('person-summary');
-
+  saveNav('person-summary',{n:viewingPerson});
   document.getElementById('personSummaryTitle').textContent='Person '+viewingPerson;
   document.getElementById('personSummaryLoading').style.display='block';
   document.getElementById('personSummaryContent').style.display='none';
@@ -661,7 +667,7 @@ function openPersonSummary(num){
 
 function openPersonProducts(){
   showPage('person-products');
-
+  saveNav('person-products',{n:viewingPerson});
   document.getElementById('personProductsTitle').textContent='Person '+viewingPerson+' - Details';
   document.getElementById('personProductsLoading').style.display='block';
   document.getElementById('personProductsContent').style.display='none';
@@ -695,7 +701,7 @@ function openPersonProducts(){
 function openPersonCompanies(product){
   viewingPersonProduct=product;
   showPage('person-companies');
-
+  saveNav('person-companies',{n:viewingPerson,p:product});
   document.getElementById('personCompaniesTitle').textContent=product+' - Companies';
   document.getElementById('personCompaniesLoading').style.display='block';
   document.getElementById('personCompaniesContent').style.display='none';
@@ -1080,8 +1086,8 @@ function selectChecker(num){
 }
 
 // Stop picker clicks from bubbling to scannerBox
-try{document.getElementById('packerPicker').addEventListener('click',function(e){e.stopPropagation()})}catch(e){}
-try{document.getElementById('checkerPicker').addEventListener('click',function(e){e.stopPropagation()})}catch(e){}
+document.getElementById('packerPicker').addEventListener('click',function(e){e.stopPropagation()});
+document.getElementById('checkerPicker').addEventListener('click',function(e){e.stopPropagation()});
 
 function closeScanner(){
   if(scanner&&isScanning){
@@ -1140,9 +1146,9 @@ function doManual(){
   checkCode(v);
 }
 
-try{document.getElementById('manualCode').addEventListener('keydown',function(e){
+document.getElementById('manualCode').addEventListener('keydown',function(e){
   if(e.key==='Enter') doManual();
-})}catch(e){}
+});
 
 // API CALL — now sends both person (packer) and checker
 function checkCode(barcode){
@@ -1295,25 +1301,4 @@ function confirmSave(){
 
 function skipSave(){
   pendingSave=null;
-  document.getElementById('saveConfirmArea').style.display='none';
-  // Resume scanning after skip
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('resultCard').style.display='none';
-  isPaused=false;
-  lastBarcode='';
-  if(scanner&&isScanning){
-    try{scanner.resume()}catch(e){}
-  }
-}
-
-// TAP TO RESUME - blocked when Save/Skip is showing
-function resumeScan(){
-  if(!isPaused) return;
-  // If save/skip buttons are showing, user MUST click one of them
-  if(pendingSave) return;
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('resultCard').style.display='none';
-  isPaused=false;
-  lastBarcode='';
-  if(scanner&&isScanning){
-    try{scanner.resume()}catch(e){
+  document.getElementById('saveConfirmArea').style
