@@ -7,9 +7,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a2e">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <!-- html5-qrcode loaded at end of body -->
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -184,8 +181,8 @@
     <div class="sub"><span class="dot" id="dot"></span></div>
   </div>
 
-  <!-- PAGE: SETTINGS -->
-  <div class="page" id="page-settings">
+  <!-- PAGE: SETTINGS (active by default, JS will switch if API URL exists) -->
+  <div class="page active" id="page-settings">
     <div class="setup">
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
@@ -195,8 +192,8 @@
     </div>
   </div>
 
-  <!-- PAGE: PRODUCT SUMMARY (active by default since API is hardcoded) -->
-  <div class="page active" id="page-products">
+  <!-- PAGE: PRODUCT SUMMARY -->
+  <div class="page" id="page-products">
     <div class="loading-page" id="productsLoading"><div class="spinner"></div><div>Loading products...</div></div>
     <div id="productsContent" style="display:none">
       <div class="total-box" style="display:flex;align-items:center;justify-content:space-between">
@@ -427,22 +424,6 @@ try{
 document.getElementById('dot').className='dot off';
 }catch(e){}
 
-// Override fetch with XMLHttpRequest for mobile compatibility
-// Mobile Chrome often hangs on Google Apps Script redirects with fetch()
-window.fetch=function(url){
-  return new Promise(function(resolve,reject){
-    var x=new XMLHttpRequest();
-    x.open('GET',url);
-    x.timeout=30000;
-    x.onload=function(){
-      resolve({json:function(){return Promise.resolve(JSON.parse(x.responseText))}});
-    };
-    x.onerror=function(){reject(new Error('Network error'))};
-    x.ontimeout=function(){reject(new Error('Request timeout'))};
-    x.send();
-  });
-};
-
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
 var pendingSave=null;
 var currentPerson='';
@@ -453,10 +434,6 @@ try{
   var storedUrl=localStorage.getItem('apiUrl')||'';
   if(storedUrl && storedUrl!==CURRENT_API){localStorage.setItem('apiUrl',CURRENT_API)}
 }catch(e){}
-
-// CRITICAL: Call initApp() HERE before any addEventListener calls
-// Function declarations are hoisted so initApp/showPage/loadProducts are available
-try{initApp()}catch(e){console.error('Early initApp error:',e)}
 
 var selectedProduct='';
 var selectedCompany='';
@@ -542,7 +519,7 @@ function loadProducts(){
   document.getElementById('productsLoading').style.display='block';
   document.getElementById('productsContent').style.display='none';
 
-  fetch(apiUrl+'?action=summary')
+  fetch(apiUrl+'?action=summary',{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('productsLoading').style.display='none';
@@ -591,7 +568,7 @@ function loadCompanies(product){
   document.getElementById('companiesLoading').style.display='block';
   document.getElementById('companiesContent').style.display='none';
 
-  fetch(apiUrl+'?action=companies&product='+encodeURIComponent(product))
+  fetch(apiUrl+'?action=companies&product='+encodeURIComponent(product),{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('companiesLoading').style.display='none';
@@ -643,7 +620,7 @@ function openPersonSummary(num){
   document.getElementById('personSummaryLoading').style.display='block';
   document.getElementById('personSummaryContent').style.display='none';
 
-  fetch(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson))
+  fetch(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('personSummaryLoading').style.display='none';
@@ -662,7 +639,7 @@ function openPersonProducts(){
   document.getElementById('personProductsLoading').style.display='block';
   document.getElementById('personProductsContent').style.display='none';
 
-  fetch(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson))
+  fetch(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('personProductsLoading').style.display='none';
@@ -696,7 +673,7 @@ function openPersonCompanies(product){
   document.getElementById('personCompaniesLoading').style.display='block';
   document.getElementById('personCompaniesContent').style.display='none';
 
-  fetch(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product))
+  fetch(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('personCompaniesLoading').style.display='none';
@@ -791,7 +768,7 @@ function openStatusList(type){
   document.getElementById('statusListLoading').style.display='block';
   document.getElementById('statusListContent').style.display='none';
 
-  fetch(apiUrl+'?action=productdata&product=&company=')
+  fetch(apiUrl+'?action=productdata&product=&company=',{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('statusListLoading').style.display='none';
@@ -913,7 +890,7 @@ function loadProductData(product,company){
   var url=apiUrl+'?action=productdata&product='+encodeURIComponent(product);
   if(company) url+='&company='+encodeURIComponent(company);
 
-  fetch(url)
+  fetch(url,{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       totalForProduct=data.total||0;
@@ -1126,7 +1103,7 @@ function checkCode(barcode){
   if(currentPerson) url+='&person='+encodeURIComponent(currentPerson);
   if(currentChecker) url+='&checker='+encodeURIComponent(currentChecker);
 
-  fetch(url)
+  fetch(url,{redirect:'follow'})
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('loading').style.display='none';
@@ -1174,4 +1151,187 @@ function checkCode(barcode){
       }
     })
     .catch(function(e){
-      doc
+      document.getElementById('loading').style.display='none';
+      showResult({status:'error',barcode:barcode,message:'Connection error.'});
+      isChecking=false;
+      document.getElementById('tapOverlay').style.display='flex';
+    });
+}
+
+// SHOW RESULT
+function showResult(r){
+  var c=document.getElementById('resultCard');
+  var icon=document.getElementById('rIcon');
+  var stat=document.getElementById('rStatus');
+  var details=document.getElementById('rDetails');
+  var code=document.getElementById('rCode');
+  c.className='result';
+
+  if(r.status==='OK'){
+    var parts=(r.details||'Found').split(/[|,]+/);
+    var firstWord=parts[0].trim().split(/\s+/)[0]||'Found';
+    var secondPart=parts.length>1?parts[1].trim():'';
+    c.classList.add('ok');icon.textContent='\u2705';stat.textContent=firstWord;
+    beep('ok');speak(firstWord);if(navigator.vibrate)navigator.vibrate([100,50,100]);
+    details.textContent=secondPart;
+  } else if(r.status==='NO'){
+    c.classList.add('no');icon.textContent='\u274C';stat.textContent='NOT FOUND';
+    beep('no');speak('Not Found');if(navigator.vibrate)navigator.vibrate([300]);c.classList.add('vib');
+    details.textContent=r.details||'';
+  } else if(r.status==='DUPLICATE'){
+    var originTag=r.origin==='NF'?' (was NF)':' (was Scanned)';
+    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
+    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
+    details.innerHTML='<span class="origin-tag '+(r.origin==='NF'?'tag-nf':'tag-scanned')+'">'+((r.origin||'Scanned'))+'</span> '+(r.details||'');
+  } else if(r.status==='NF_DUPLICATE'){
+    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
+    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
+    details.innerHTML='<span class="origin-tag tag-nf">NF</span> '+(r.details||'');
+  } else {
+    c.classList.add('error');icon.textContent='\u2699\uFE0F';stat.textContent='ERROR';
+    details.textContent=r.details||'';
+  }
+  code.textContent=r.barcode?'Barcode: '+r.barcode:'';
+  c.style.display='block';
+  setTimeout(function(){c.classList.remove('vib')},500);
+}
+
+// SAVE CONFIRMATION
+function showSaveButton(btnClass,btnText){
+  var area=document.getElementById('saveConfirmArea');
+  var btn=document.getElementById('saveConfirmBtn');
+  btn.className='save-confirm-btn '+btnClass;
+  btn.textContent=btnText;
+  area.style.display='flex';
+}
+
+function confirmSave(){
+  if(!pendingSave) return;
+  var ps=pendingSave;
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+  // Resume scanning immediately after save
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+
+  var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson)+'&checker='+encodeURIComponent(currentChecker);
+  fetch(url,{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(resp){
+      if(resp.status==='saved'){
+        if(ps.saveStatus==='NF'){
+          var alreadyNF=false;
+          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
+          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details,packer:currentPerson,checker:currentChecker});
+          updateCounter();
+          renderNFList();
+        } else if(ps.saveStatus==='DUPLICATE'||ps.saveStatus==='NF_DUPLICATE'){
+          var origin=(ps.saveStatus==='NF_DUPLICATE')?'NF':(ps.origin||'Scanned');
+          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:origin,packer:currentPerson,checker:currentChecker});
+          updateCounter();
+          renderDPList();
+        }
+      }
+    })
+    .catch(function(e){
+      alert('Error saving: '+e);
+    });
+}
+
+function skipSave(){
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+  // Resume scanning after skip
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+}
+
+// TAP TO RESUME - blocked when Save/Skip is showing
+function resumeScan(){
+  if(!isPaused) return;
+  // If save/skip buttons are showing, user MUST click one of them
+  if(pendingSave) return;
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+}
+try{document.getElementById('tapOverlay').addEventListener('click',resumeScan)}catch(e){}
+try{document.getElementById('scannerBox').addEventListener('click',resumeScan)}catch(e){}
+
+// SAVE BUTTON - using addEventListener as backup for onclick
+try{document.getElementById('saveBtn').addEventListener('click',function(){
+  try{saveUrl()}catch(e){
+    var d=document.getElementById('debugMsg');
+    d.style.display='block';
+    d.textContent='Click error: '+e.message;
+  }
+})}catch(e){}
+
+// PHONE BACK BUTTON
+var currentPage='products';
+var origShowPage=showPage;
+showPage=function(name){
+  origShowPage(name);
+  currentPage=name;
+  try{history.pushState({page:name},null,'')}catch(e){}
+};
+window.addEventListener('popstate',function(e){
+  if(currentPage==='scanner'){
+    if(!selectedProduct){
+      if(scanner&&isScanning){scanner.stop().then(function(){isScanning=false;document.getElementById('startBtn').style.display='flex';document.getElementById('stopBtn').style.display='none';document.getElementById('reader').innerHTML=''})}
+      document.getElementById('resultCard').style.display='none';
+      document.getElementById('tapOverlay').style.display='none';
+      isPaused=false;
+      origShowPage('products');currentPage='products';loadProducts();
+      try{history.pushState({page:'products'},null,'')}catch(e){}
+    } else {
+      goBackToCompanies();
+      try{history.pushState({page:'companies'},null,'')}catch(e){}
+    }
+  } else if(currentPage==='companies'){
+    goBackToProducts();
+    try{history.pushState({page:'products'},null,'')}catch(e){}
+  } else if(currentPage==='person-companies'){
+    goBackToPersonProducts();
+    try{history.pushState({page:'person-products'},null,'')}catch(e){}
+  } else if(currentPage==='person-products'){
+    goBackToPersonSummary();
+    try{history.pushState({page:'person-summary'},null,'')}catch(e){}
+  } else if(currentPage==='person-summary'){
+    goBackToProducts();
+    try{history.pushState({page:'products'},null,'')}catch(e){}
+  } else if(currentPage==='status-list'){
+    goBackToProducts();
+    try{history.pushState({page:'products'},null,'')}catch(e){}
+  } else if(currentPage==='settings'){
+    if(apiUrl){
+      origShowPage('products');
+      currentPage='products';
+      try{history.pushState({page:'products'},null,'')}catch(e){}
+    }
+  } else {
+    try{history.pushState({page:'products'},null,'')}catch(e){}
+  }
+});
+try{history.replaceState({page:apiUrl?'products':'settings'},null,'')}catch(e){}
+
+// Init app at the very end after all functions are defined
+initApp();
+</script>
+<script async src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</body>
+</html>
