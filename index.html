@@ -427,6 +427,22 @@ try{
 document.getElementById('dot').className='dot off';
 }catch(e){}
 
+// Override fetch with XMLHttpRequest for mobile compatibility
+// Mobile Chrome often hangs on Google Apps Script redirects with fetch()
+window.fetch=function(url){
+  return new Promise(function(resolve,reject){
+    var x=new XMLHttpRequest();
+    x.open('GET',url);
+    x.timeout=30000;
+    x.onload=function(){
+      resolve({json:function(){return Promise.resolve(JSON.parse(x.responseText))}});
+    };
+    x.onerror=function(){reject(new Error('Network error'))};
+    x.ontimeout=function(){reject(new Error('Request timeout'))};
+    x.send();
+  });
+};
+
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
 var pendingSave=null;
 var currentPerson='';
@@ -526,7 +542,7 @@ function loadProducts(){
   document.getElementById('productsLoading').style.display='block';
   document.getElementById('productsContent').style.display='none';
 
-  fetch(apiUrl+'?action=summary',{redirect:'follow'})
+  fetch(apiUrl+'?action=summary')
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('productsLoading').style.display='none';
@@ -575,7 +591,7 @@ function loadCompanies(product){
   document.getElementById('companiesLoading').style.display='block';
   document.getElementById('companiesContent').style.display='none';
 
-  fetch(apiUrl+'?action=companies&product='+encodeURIComponent(product),{redirect:'follow'})
+  fetch(apiUrl+'?action=companies&product='+encodeURIComponent(product))
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('companiesLoading').style.display='none';
@@ -627,7 +643,7 @@ function openPersonSummary(num){
   document.getElementById('personSummaryLoading').style.display='block';
   document.getElementById('personSummaryContent').style.display='none';
 
-  fetch(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
+  fetch(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson))
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('personSummaryLoading').style.display='none';
@@ -646,7 +662,7 @@ function openPersonProducts(){
   document.getElementById('personProductsLoading').style.display='block';
   document.getElementById('personProductsContent').style.display='none';
 
-  fetch(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
+  fetch(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson))
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('personProductsLoading').style.display='none';
@@ -680,7 +696,7 @@ function openPersonCompanies(product){
   document.getElementById('personCompaniesLoading').style.display='block';
   document.getElementById('personCompaniesContent').style.display='none';
 
-  fetch(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),{redirect:'follow'})
+  fetch(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product))
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('personCompaniesLoading').style.display='none';
@@ -775,7 +791,7 @@ function openStatusList(type){
   document.getElementById('statusListLoading').style.display='block';
   document.getElementById('statusListContent').style.display='none';
 
-  fetch(apiUrl+'?action=productdata&product=&company=',{redirect:'follow'})
+  fetch(apiUrl+'?action=productdata&product=&company=')
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('statusListLoading').style.display='none';
@@ -897,7 +913,7 @@ function loadProductData(product,company){
   var url=apiUrl+'?action=productdata&product='+encodeURIComponent(product);
   if(company) url+='&company='+encodeURIComponent(company);
 
-  fetch(url,{redirect:'follow'})
+  fetch(url)
     .then(function(r){return r.json()})
     .then(function(data){
       totalForProduct=data.total||0;
@@ -1110,7 +1126,7 @@ function checkCode(barcode){
   if(currentPerson) url+='&person='+encodeURIComponent(currentPerson);
   if(currentChecker) url+='&checker='+encodeURIComponent(currentChecker);
 
-  fetch(url,{redirect:'follow'})
+  fetch(url)
     .then(function(r){return r.json()})
     .then(function(data){
       document.getElementById('loading').style.display='none';
@@ -1158,15 +1174,4 @@ function checkCode(barcode){
       }
     })
     .catch(function(e){
-      document.getElementById('loading').style.display='none';
-      showResult({status:'error',barcode:barcode,message:'Connection error.'});
-      isChecking=false;
-      document.getElementById('tapOverlay').style.display='flex';
-    });
-}
-
-// SHOW RESULT
-function showResult(r){
-  var c=document.getElementById('resultCard');
-  var icon=document.getElementById('rIcon');
-  var stat=document.getElementBy
+      doc
