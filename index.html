@@ -33,8 +33,8 @@
     .total-num{font-size:42px;font-weight:700;color:#39ff14}
     .total-label{font-size:13px;color:#8899aa;margin-top:4px}
     .total-nfdp{font-size:14px;margin-top:6px;font-weight:600}
-    .nf-tag{color:#dc2f02}
-    .dp-tag{color:#e09f3e}
+    .nf-tag{color:#e09f3e}
+    .dp-tag{color:#dc2f02}
     .product-list{list-style:none}
     .product-item{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:#16213e;border-radius:10px;margin-bottom:8px;cursor:pointer;border:1px solid #0f3460;transition:all 0.2s}
     .product-item:active{transform:scale(0.98);border-color:#39ff14}
@@ -47,6 +47,11 @@
     @keyframes spin{to{transform:rotate(360deg)}}
     .settings-link{text-align:center;margin-top:16px}
     .settings-link button{background:none;border:1px solid #0f3460;color:#8899aa;padding:8px 20px;border-radius:8px;font-size:12px;cursor:pointer}
+
+    /* Person Numbers Row on Home */
+    .person-row{display:flex;gap:8px;justify-content:center;margin:16px 0 8px;flex-wrap:wrap}
+    .person-row-btn{width:44px;height:44px;border-radius:10px;border:2px solid #0f3460;background:#16213e;color:#39ff14;font-size:20px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
+    .person-row-btn:active{transform:scale(0.9);border-color:#39ff14;background:#0f3460}
 
     /* Company Page */
     .company-header{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#0f3460,#16213e);padding:16px;border-radius:12px;margin-bottom:12px}
@@ -80,8 +85,8 @@
     .result{padding:14px;border-radius:12px;text-align:center;display:none;animation:slideUp .3s ease;margin:0 0 8px}
     @keyframes slideUp{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
     .result.ok{background:linear-gradient(135deg,#0a3d1e,#1b5e3a);border:2px solid #39ff14}
-    .result.no{background:linear-gradient(135deg,#6a040f,#9d0208);border:2px solid #dc2f02}
-    .result.duplicate{background:linear-gradient(135deg,#5a3e00,#7c5800);border:2px solid #e09f3e}
+    .result.no{background:linear-gradient(135deg,#5a3e00,#7c5800);border:2px solid #e09f3e}
+    .result.duplicate{background:linear-gradient(135deg,#6a040f,#9d0208);border:2px solid #dc2f02}
     .result.nf-duplicate{background:linear-gradient(135deg,#5a1a00,#7c2800);border:2px solid #ff6b35}
     .result.error{background:linear-gradient(135deg,#333,#555);border:2px solid #888}
     .r-row{display:flex;align-items:center;justify-content:center;gap:10px}
@@ -98,19 +103,20 @@
     .bc-list{max-height:250px;overflow-y:auto}
     .bc-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#16213e;border-radius:6px;margin-bottom:4px;font-size:12px;font-family:monospace;color:#ccc}
     .bc-item.scanned{background:#1b4332;color:#39ff14;text-decoration:line-through;opacity:0.6}
-    .bc-item.nf-item{background:#3d0a0a;color:#dc2f02;border:1px solid #6a040f}
-    .bc-item.dp-item{background:#3d2e00;color:#e09f3e;border:1px solid #7c5800}
+    .bc-item.nf-item{background:#3d2e00;color:#e09f3e;border:1px solid #7c5800}
+    .bc-item.dp-item{background:#3d0a0a;color:#dc2f02;border:1px solid #6a040f}
     .bc-detail{font-size:11px;color:#8899aa;font-family:-apple-system,sans-serif;max-width:50%;text-align:right}
+    .pc-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;display:inline-block;background:#0f3460;color:#39ff14}
     .origin-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;display:inline-block}
     .origin-tag.tag-scanned{background:#1b4332;color:#39ff14}
-    .origin-tag.tag-nf{background:#3d0a0a;color:#dc2f02}
+    .origin-tag.tag-nf{background:#3d2e00;color:#e09f3e}
 
     /* Save confirmation buttons */
     .save-confirm-area{margin-top:10px;display:flex;gap:8px;justify-content:center}
     .save-confirm-btn{padding:10px 20px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s}
     .save-confirm-btn:active{transform:scale(0.95)}
-    .save-confirm-btn.save-nf{background:#dc2f02;color:#fff}
-    .save-confirm-btn.save-dp{background:#e09f3e;color:#1a1a2e}
+    .save-confirm-btn.save-nf{background:#e09f3e;color:#1a1a2e}
+    .save-confirm-btn.save-dp{background:#dc2f02;color:#fff}
     .save-confirm-btn.save-nfdp{background:#ff6b35;color:#fff}
     .save-confirm-btn.skip-btn{background:#333;color:#aaa;border:1px solid #555}
 
@@ -128,6 +134,27 @@
 
     /* Person badge */
     .person-badge{display:inline-block;background:#0f3460;color:#39ff14;font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px;margin-left:8px}
+
+    /* Person Detail Pages */
+    .person-summary-header{background:linear-gradient(135deg,#0f3460,#16213e);padding:20px;border-radius:12px;margin-bottom:12px;text-align:center}
+    .person-summary-title{font-size:24px;font-weight:700;color:#fff;margin-bottom:12px}
+    .person-summary-counts{display:flex;justify-content:center;gap:40px}
+    .person-summary-col{text-align:center}
+    .person-summary-col .count-num{font-size:32px;font-weight:700;color:#39ff14}
+    .person-summary-col .count-label{font-size:13px;color:#8899aa;margin-top:2px}
+    .details-btn{width:100%;padding:12px;background:#0f3460;color:#39ff14;border:2px solid #39ff14;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:12px;transition:all 0.2s}
+    .details-btn:active{transform:scale(0.98);background:#39ff14;color:#1a1a2e}
+
+    /* Person Product Detail Table */
+    .detail-table-header{display:flex;padding:10px 16px;background:#0f3460;border-radius:8px;margin-bottom:6px;font-size:13px;font-weight:700;color:#8899aa}
+    .detail-table-header span{flex:1;text-align:center}
+    .detail-table-header span:first-child{text-align:left}
+    .detail-row{display:flex;padding:12px 16px;background:#16213e;border-radius:8px;margin-bottom:6px;font-size:14px;cursor:pointer;border:1px solid #0f3460;transition:all 0.2s;align-items:center}
+    .detail-row:active{transform:scale(0.98);border-color:#39ff14}
+    .detail-row span{flex:1;text-align:center;font-weight:600}
+    .detail-row span:first-child{text-align:left}
+    .detail-row .packed-num{color:#39ff14}
+    .detail-row .checked-num{color:#4fc3f7}
   </style>
 </head>
 <body>
@@ -159,8 +186,74 @@
         <button class="scan-all-btn" onclick="scanAllGlobal()">Scan All</button>
       </div>
       <ul class="product-list" id="productList"></ul>
+      <!-- Person Numbers Row -->
+      <div class="person-row" id="personRow">
+        <button class="person-row-btn" onclick="openPersonSummary(1)">1</button>
+        <button class="person-row-btn" onclick="openPersonSummary(2)">2</button>
+        <button class="person-row-btn" onclick="openPersonSummary(3)">3</button>
+        <button class="person-row-btn" onclick="openPersonSummary(4)">4</button>
+        <button class="person-row-btn" onclick="openPersonSummary(5)">5</button>
+        <button class="person-row-btn" onclick="openPersonSummary(6)">6</button>
+        <button class="person-row-btn" onclick="openPersonSummary(7)">7</button>
+      </div>
     </div>
     <div class="settings-link"><button onclick="showPage('settings')">Settings</button></div>
+  </div>
+
+  <!-- PAGE: PERSON SUMMARY -->
+  <div class="page" id="page-person-summary">
+    <button class="back-btn" onclick="goBackToProducts()">&larr; Back to Products</button>
+    <div class="loading-page" id="personSummaryLoading"><div class="spinner"></div><div>Loading person data...</div></div>
+    <div id="personSummaryContent" style="display:none">
+      <div class="person-summary-header">
+        <div class="person-summary-title" id="personSummaryTitle">Person 1</div>
+        <div class="person-summary-counts">
+          <div class="person-summary-col">
+            <div class="count-num" id="personPackedTotal">0</div>
+            <div class="count-label">Packed</div>
+          </div>
+          <div class="person-summary-col">
+            <div class="count-num" id="personCheckedTotal" style="color:#4fc3f7">0</div>
+            <div class="count-label">Checked</div>
+          </div>
+        </div>
+      </div>
+      <button class="details-btn" onclick="openPersonProducts()">Details</button>
+    </div>
+  </div>
+
+  <!-- PAGE: PERSON PRODUCTS (detail breakdown) -->
+  <div class="page" id="page-person-products">
+    <button class="back-btn" onclick="goBackToPersonSummary()">&larr; Back</button>
+    <div class="loading-page" id="personProductsLoading"><div class="spinner"></div><div>Loading details...</div></div>
+    <div id="personProductsContent" style="display:none">
+      <div class="person-summary-header" style="padding:14px 20px">
+        <div class="person-summary-title" id="personProductsTitle" style="font-size:20px;margin-bottom:0">Person 1 - Details</div>
+      </div>
+      <div class="detail-table-header">
+        <span>Product</span>
+        <span>Packed</span>
+        <span>Checked</span>
+      </div>
+      <div id="personProductsList"></div>
+    </div>
+  </div>
+
+  <!-- PAGE: PERSON COMPANIES (drill-down from product) -->
+  <div class="page" id="page-person-companies">
+    <button class="back-btn" onclick="goBackToPersonProducts()">&larr; Back</button>
+    <div class="loading-page" id="personCompaniesLoading"><div class="spinner"></div><div>Loading companies...</div></div>
+    <div id="personCompaniesContent" style="display:none">
+      <div class="person-summary-header" style="padding:14px 20px">
+        <div class="person-summary-title" id="personCompaniesTitle" style="font-size:20px;margin-bottom:0">Product - Companies</div>
+      </div>
+      <div class="detail-table-header">
+        <span>Company</span>
+        <span>Packed</span>
+        <span>Checked</span>
+      </div>
+      <div id="personCompaniesList"></div>
+    </div>
   </div>
 
   <!-- PAGE: COMPANY LIST -->
@@ -218,18 +311,32 @@
       <div id="tapOverlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:10;cursor:pointer;align-items:center;justify-content:center">
         <div style="color:#fff;font-size:18px;font-weight:700;text-align:center;padding:20px">TAP HERE<br><span style="font-size:13px;font-weight:400;color:#aaa">to scan next barcode</span></div>
       </div>
-      <!-- Person Picker Overlay -->
-      <div class="person-picker-overlay" id="personPicker">
-        <div class="person-picker-title">Select Scanner Person</div>
-        <div class="person-picker-sub">Tap a number to start scanning</div>
+      <!-- Packer Picker Overlay -->
+      <div class="person-picker-overlay" id="packerPicker">
+        <div class="person-picker-title">Select Packer</div>
+        <div class="person-picker-sub">Who is packing?</div>
         <div class="person-picker-grid">
-          <button class="person-btn" onclick="selectPerson(1)">1</button>
-          <button class="person-btn" onclick="selectPerson(2)">2</button>
-          <button class="person-btn" onclick="selectPerson(3)">3</button>
-          <button class="person-btn" onclick="selectPerson(4)">4</button>
-          <button class="person-btn" onclick="selectPerson(5)">5</button>
-          <button class="person-btn" onclick="selectPerson(6)">6</button>
-          <button class="person-btn" onclick="selectPerson(7)">7</button>
+          <button class="person-btn" onclick="selectPacker(1)">1</button>
+          <button class="person-btn" onclick="selectPacker(2)">2</button>
+          <button class="person-btn" onclick="selectPacker(3)">3</button>
+          <button class="person-btn" onclick="selectPacker(4)">4</button>
+          <button class="person-btn" onclick="selectPacker(5)">5</button>
+          <button class="person-btn" onclick="selectPacker(6)">6</button>
+          <button class="person-btn" onclick="selectPacker(7)">7</button>
+        </div>
+      </div>
+      <!-- Checker Picker Overlay -->
+      <div class="person-picker-overlay" id="checkerPicker" style="display:none">
+        <div class="person-picker-title">Select Checker</div>
+        <div class="person-picker-sub">Who is checking?</div>
+        <div class="person-picker-grid">
+          <button class="person-btn" onclick="selectChecker(1)">1</button>
+          <button class="person-btn" onclick="selectChecker(2)">2</button>
+          <button class="person-btn" onclick="selectChecker(3)">3</button>
+          <button class="person-btn" onclick="selectChecker(4)">4</button>
+          <button class="person-btn" onclick="selectChecker(5)">5</button>
+          <button class="person-btn" onclick="selectChecker(6)">6</button>
+          <button class="person-btn" onclick="selectChecker(7)">7</button>
         </div>
       </div>
     </div>
@@ -257,21 +364,22 @@
 
     <!-- Not Found list -->
     <div class="list-section" style="margin-top:12px">
-      <div class="list-header" id="nfHeader" style="color:#dc2f02">Not Found (0)</div>
+      <div class="list-header" id="nfHeader" style="color:#e09f3e">Not Found (0)</div>
       <div class="bc-list" id="nfList"></div>
     </div>
 
     <!-- Duplicate list -->
     <div class="list-section" style="margin-top:12px">
-      <div class="list-header" id="dpHeader" style="color:#e09f3e">Duplicates (0)</div>
+      <div class="list-header" id="dpHeader" style="color:#dc2f02">Duplicates (0)</div>
       <div class="bc-list" id="dpList"></div>
     </div>
   </div>
 
 <script>
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
-var pendingSave=null; // {barcode, saveStatus, details, origin}
-var currentPerson=''; // person number 1-7 for this scanning session
+var pendingSave=null;
+var currentPerson=''; // packer number 1-7
+var currentChecker=''; // checker number 1-7
 var apiUrl=localStorage.getItem('apiUrl')||'';
 var selectedProduct='';
 var selectedCompany='';
@@ -280,6 +388,10 @@ var scannedItems=[];
 var nfItems=[];
 var dpItems=[];
 var totalForProduct=0;
+
+// Person detail page state
+var viewingPerson='';
+var viewingPersonProduct='';
 
 window.onload=function(){
   if(apiUrl){
@@ -293,13 +405,20 @@ window.onload=function(){
   }
 };
 
-// HELPER: Build NF/DP tag string
+// HELPER: Build Not Found / Duplicates tag string
 function nfdpTag(nf,dp){
   if(!nf&&!dp) return '';
   var parts=[];
-  if(nf) parts.push('<span class="nf-tag">NF-'+nf+'</span>');
-  if(dp) parts.push('<span class="dp-tag">DP-'+dp+'</span>');
-  return ' ['+parts.join(', ')+']';
+  if(nf) parts.push('<div class="nf-tag">Not Found - '+nf+'</div>');
+  if(dp) parts.push('<div class="dp-tag">Duplicates - '+dp+'</div>');
+  return parts.join('');
+}
+
+// HELPER: Build P/C tag for barcode lists
+function pcTag(packer,checker){
+  if(!packer&&!checker) return '';
+  var txt='P'+(packer||'?')+' - C'+(checker||'?');
+  return '<span class="pc-tag">'+txt+'</span>';
 }
 
 // PAGES
@@ -334,7 +453,7 @@ function loadProducts(){
       document.getElementById('productsContent').style.display='block';
       var t=data.total||0;
       var ts=data.totalScanned||0;
-      document.getElementById('totalCount').textContent=ts+' / '+t;
+      document.getElementById('totalCount').textContent=ts+'/'+t;
       document.getElementById('totalNFDP').innerHTML=nfdpTag(data.totalNF||0,data.totalDP||0);
 
       var list=document.getElementById('productList');
@@ -343,7 +462,7 @@ function loadProducts(){
         data.products.forEach(function(p){
           var li=document.createElement('li');
           li.className='product-item';
-          li.innerHTML='<div><div class="product-name">'+p.name+'</div></div><div style="text-align:right"><div style="font-size:22px;color:#39ff14;font-weight:700">'+(p.scanned||0)+' / '+p.count+'</div><div class="product-nfdp">'+nfdpTag(p.nf||0,p.dp||0)+'</div></div>';
+          li.innerHTML='<div><div class="product-name">'+p.name+'</div></div><div style="text-align:right"><div style="font-size:22px;color:#39ff14;font-weight:700">'+(p.scanned||0)+'/'+p.count+'</div><div class="product-nfdp">'+nfdpTag(p.nf||0,p.dp||0)+'</div></div>';
           li.onclick=function(){openCompanyPage(p.name,p.scanned||0,p.count)};
           list.appendChild(li);
         });
@@ -360,7 +479,7 @@ function openCompanyPage(product,scanned,total){
   selectedProduct=product;
   showPage('companies');
   document.getElementById('companyProductName').textContent=product;
-  document.getElementById('companyProductCount').textContent=scanned+' / '+total;
+  document.getElementById('companyProductCount').textContent=scanned+'/'+total;
   document.getElementById('companyNFDP').innerHTML='';
   loadCompanies(product);
 }
@@ -384,7 +503,7 @@ function loadCompanies(product){
           totalCount+=c.count;
         });
       }
-      document.getElementById('companyProductCount').textContent=totalScanned+' / '+totalCount;
+      document.getElementById('companyProductCount').textContent=totalScanned+'/'+totalCount;
       document.getElementById('companyNFDP').innerHTML=nfdpTag(totalNF,totalDP);
 
       var list=document.getElementById('companyList');
@@ -393,7 +512,7 @@ function loadCompanies(product){
         data.companies.forEach(function(c){
           var li=document.createElement('li');
           li.className='company-item';
-          li.innerHTML='<div><div class="company-name">'+c.name+'</div></div><div style="text-align:right"><div class="company-count">'+(c.scanned||0)+' / '+c.count+'</div><div class="product-nfdp">'+nfdpTag(c.nf||0,c.dp||0)+'</div></div>';
+          li.innerHTML='<div><div class="company-name">'+c.name+'</div></div><div style="text-align:right"><div class="company-count">'+(c.scanned||0)+'/'+c.count+'</div><div class="product-nfdp">'+nfdpTag(c.nf||0,c.dp||0)+'</div></div>';
           li.onclick=function(){selectCompany(c.name)};
           list.appendChild(li);
         });
@@ -410,14 +529,120 @@ function goBackToProducts(){
   loadProducts();
 }
 
+// ==========================================
+// PERSON DETAIL PAGES
+// ==========================================
+
+function openPersonSummary(num){
+  viewingPerson=String(num);
+  showPage('person-summary');
+  document.getElementById('personSummaryTitle').textContent='Person '+viewingPerson;
+  document.getElementById('personSummaryLoading').style.display='block';
+  document.getElementById('personSummaryContent').style.display='none';
+
+  fetch(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      document.getElementById('personSummaryLoading').style.display='none';
+      document.getElementById('personSummaryContent').style.display='block';
+      document.getElementById('personPackedTotal').textContent=data.packed||0;
+      document.getElementById('personCheckedTotal').textContent=data.checked||0;
+    })
+    .catch(function(e){
+      document.getElementById('personSummaryLoading').style.display='none';
+      alert('Error loading person data.');
+    });
+}
+
+function openPersonProducts(){
+  showPage('person-products');
+  document.getElementById('personProductsTitle').textContent='Person '+viewingPerson+' - Details';
+  document.getElementById('personProductsLoading').style.display='block';
+  document.getElementById('personProductsContent').style.display='none';
+
+  fetch(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      document.getElementById('personProductsLoading').style.display='none';
+      document.getElementById('personProductsContent').style.display='block';
+
+      var list=document.getElementById('personProductsList');
+      list.innerHTML='';
+      if(data.products){
+        data.products.forEach(function(p){
+          var row=document.createElement('div');
+          row.className='detail-row';
+          row.innerHTML='<span>'+p.name+'</span><span class="packed-num">'+p.packed+'</span><span class="checked-num">'+p.checked+'</span>';
+          row.onclick=function(){openPersonCompanies(p.name)};
+          list.appendChild(row);
+        });
+      }
+      if(!data.products||!data.products.length){
+        list.innerHTML='<div style="text-align:center;padding:20px;color:#555">No data for this person</div>';
+      }
+    })
+    .catch(function(e){
+      document.getElementById('personProductsLoading').style.display='none';
+      alert('Error loading person products.');
+    });
+}
+
+function openPersonCompanies(product){
+  viewingPersonProduct=product;
+  showPage('person-companies');
+  document.getElementById('personCompaniesTitle').textContent=product+' - Companies';
+  document.getElementById('personCompaniesLoading').style.display='block';
+  document.getElementById('personCompaniesContent').style.display='none';
+
+  fetch(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(data){
+      document.getElementById('personCompaniesLoading').style.display='none';
+      document.getElementById('personCompaniesContent').style.display='block';
+
+      var list=document.getElementById('personCompaniesList');
+      list.innerHTML='';
+      if(data.companies){
+        data.companies.forEach(function(c){
+          var row=document.createElement('div');
+          row.className='detail-row';
+          row.style.cursor='default';
+          row.innerHTML='<span>'+c.name+'</span><span class="packed-num">'+c.packed+'</span><span class="checked-num">'+c.checked+'</span>';
+          list.appendChild(row);
+        });
+      }
+      if(!data.companies||!data.companies.length){
+        list.innerHTML='<div style="text-align:center;padding:20px;color:#555">No company data</div>';
+      }
+    })
+    .catch(function(e){
+      document.getElementById('personCompaniesLoading').style.display='none';
+      alert('Error loading person companies.');
+    });
+}
+
+function goBackToPersonSummary(){
+  showPage('person-summary');
+}
+
+function goBackToPersonProducts(){
+  showPage('person-products');
+}
+
+// ==========================================
+// SCANNER FLOW
+// ==========================================
+
 // SCAN ALL from home page
 function scanAllGlobal(){
   selectedProduct='';
   selectedCompany='';
   currentPerson='';
+  currentChecker='';
   showPage('scanner');
   document.getElementById('counterProduct').textContent='All Products';
-  document.getElementById('personPicker').style.display='flex';
+  document.getElementById('packerPicker').style.display='flex';
+  document.getElementById('checkerPicker').style.display='none';
   document.getElementById('startBtn').style.display='none';
   document.getElementById('stopBtn').style.display='none';
   document.getElementById('closeScannerBtn').style.display='none';
@@ -435,6 +660,7 @@ function scanAllGlobal(){
     document.getElementById('tapOverlay').style.display='none';
     isPaused=false;
     currentPerson='';
+    currentChecker='';
     showPage('products');
     loadProducts();
   };
@@ -445,10 +671,12 @@ function scanAllGlobal(){
 function selectCompany(company){
   selectedCompany=company;
   currentPerson='';
+  currentChecker='';
   showPage('scanner');
   var label=selectedProduct+(company?' > '+company:'');
   document.getElementById('counterProduct').textContent=label;
-  document.getElementById('personPicker').style.display='flex';
+  document.getElementById('packerPicker').style.display='flex';
+  document.getElementById('checkerPicker').style.display='none';
   document.getElementById('startBtn').style.display='none';
   document.getElementById('stopBtn').style.display='none';
   document.getElementById('closeScannerBtn').style.display='none';
@@ -470,6 +698,7 @@ function goBackToCompanies(){
   document.getElementById('tapOverlay').style.display='none';
   isPaused=false;
   currentPerson='';
+  currentChecker='';
   openCompanyPage(selectedProduct,0,0);
   loadCompanies(selectedProduct);
 }
@@ -498,14 +727,17 @@ function loadProductData(product,company){
       renderDPList();
     })
     .catch(function(e){
-      document.getElementById('remainingList').innerHTML='<div style="text-align:center;padding:16px;color:#dc2f02">Error loading data</div>';
+      document.getElementById('remainingList').innerHTML='<div style="text-align:center;padding:16px;color:#e09f3e">Error loading data</div>';
     });
 }
 
 function updateCounter(){
   document.getElementById('counterRemaining').textContent=scannedItems.length;
   document.getElementById('counterTotal').textContent=totalForProduct;
-  document.getElementById('counterNFDP').innerHTML=nfdpTag(nfItems.length,dpItems.length);
+  var nfdpHtml='';
+  if(nfItems.length) nfdpHtml+='<div style="color:#e09f3e">Not Found - '+nfItems.length+'</div>';
+  if(dpItems.length) nfdpHtml+='<div style="color:#dc2f02">Duplicates - '+dpItems.length+'</div>';
+  document.getElementById('counterNFDP').innerHTML=nfdpHtml;
 }
 
 function renderBarcodeList(){
@@ -521,9 +753,8 @@ function renderScannedList(){
   document.getElementById('scannedHeader').textContent='Scanned ('+scannedItems.length+')';
   var el=document.getElementById('scannedList');
   if(!scannedItems.length){el.innerHTML='<div style="text-align:center;padding:12px;color:#555">No scans yet</div>';return}
-  // Already ordered latest first from backend
   el.innerHTML=scannedItems.map(function(b){
-    return '<div class="bc-item scanned"><span>'+b.barcode+'</span><span class="bc-detail">'+b.details+'</span></div>';
+    return '<div class="bc-item scanned"><span>'+b.barcode+pcTag(b.packer,b.checker)+'</span><span class="bc-detail">'+b.details+'</span></div>';
   }).join('');
 }
 
@@ -531,9 +762,8 @@ function renderNFList(){
   document.getElementById('nfHeader').textContent='Not Found ('+nfItems.length+')';
   var el=document.getElementById('nfList');
   if(!nfItems.length){el.innerHTML='';return}
-  // Already ordered latest first from backend
   el.innerHTML=nfItems.map(function(b){
-    return '<div class="bc-item nf-item"><span>'+b.barcode+'</span><span class="bc-detail">'+b.details+'</span></div>';
+    return '<div class="bc-item nf-item"><span>'+b.barcode+pcTag(b.packer,b.checker)+'</span><span class="bc-detail">'+b.details+'</span></div>';
   }).join('');
 }
 
@@ -541,11 +771,10 @@ function renderDPList(){
   document.getElementById('dpHeader').textContent='Duplicates ('+dpItems.length+')';
   var el=document.getElementById('dpList');
   if(!dpItems.length){el.innerHTML='';return}
-  // Already ordered latest first from backend, with origin tags
   el.innerHTML=dpItems.map(function(b){
     var originClass=b.origin==='Scanned'?'tag-scanned':'tag-nf';
-    var originLabel=b.origin==='Scanned'?'Scanned':'NF';
-    return '<div class="bc-item dp-item"><span>'+b.barcode+'<span class="origin-tag '+originClass+'">'+originLabel+'</span></span><span class="bc-detail">'+b.details+'</span></div>';
+    var originLabel=b.origin==='Scanned'?'Scanned':'Not Found';
+    return '<div class="bc-item dp-item"><span>'+b.barcode+pcTag(b.packer,b.checker)+'<span class="origin-tag '+originClass+'">'+originLabel+'</span></span><span class="bc-detail">'+b.details+'</span></div>';
   }).join('');
 }
 
@@ -583,304 +812,4 @@ function startScan(){
         Html5QrcodeSupportedFormats.EAN_13,
         Html5QrcodeSupportedFormats.EAN_8,
         Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.ITF,
-        Html5QrcodeSupportedFormats.CODE_93
-      ]
-    },
-    onOk,
-    function(){}
-  ).then(function(){
-    isScanning=true;
-    document.getElementById('startBtn').style.display='none';
-    document.getElementById('stopBtn').style.display='flex';
-    document.getElementById('closeScannerBtn').style.display='block';
-  }).catch(function(err){alert('Camera error: '+err)});
-}
-
-function stopScan(){
-  if(scanner&&isScanning){
-    scanner.stop().then(function(){
-      isScanning=false;
-      document.getElementById('startBtn').style.display='flex';
-      document.getElementById('stopBtn').style.display='none';
-      document.getElementById('closeScannerBtn').style.display='block';
-      document.getElementById('reader').innerHTML='';
-    });
-  }
-}
-
-// PERSON PICKER
-function selectPerson(num){
-  currentPerson=String(num);
-  document.getElementById('personPicker').style.display='none';
-  document.getElementById('counterProduct').innerHTML=document.getElementById('counterProduct').textContent+'<span class="person-badge">Person '+currentPerson+'</span>';
-  startScan();
-}
-
-function closeScanner(){
-  if(scanner&&isScanning){
-    scanner.stop().then(function(){
-      isScanning=false;
-      document.getElementById('reader').innerHTML='';
-      resetScannerUI();
-    }).catch(function(){resetScannerUI()});
-  } else {
-    resetScannerUI();
-  }
-}
-
-function resetScannerUI(){
-  isScanning=false;
-  isPaused=false;
-  currentPerson='';
-  pendingSave=null;
-  document.getElementById('startBtn').style.display='none';
-  document.getElementById('stopBtn').style.display='none';
-  document.getElementById('closeScannerBtn').style.display='none';
-  document.getElementById('resultCard').style.display='none';
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('saveConfirmArea').style.display='none';
-  document.getElementById('personPicker').style.display='flex';
-  // Reset counter label (remove person badge)
-  var label=selectedProduct+(selectedCompany?' > '+selectedCompany:'');
-  if(!selectedProduct) label='All Products';
-  document.getElementById('counterProduct').textContent=label;
-}
-
-function onOk(text){
-  if(isPaused||isChecking) return;
-  isChecking=true;
-  isPaused=true;
-  lastBarcode=text;
-  if(navigator.vibrate) navigator.vibrate(100);
-  scanner.pause(true);
-  checkCode(text);
-}
-
-function doManual(){
-  var v=document.getElementById('manualCode').value.trim();
-  if(!v) return;
-  document.getElementById('manualCode').value='';
-  isChecking=true;
-  checkCode(v);
-}
-
-document.getElementById('manualCode').addEventListener('keydown',function(e){
-  if(e.key==='Enter') doManual();
-});
-
-// API CALL
-function checkCode(barcode){
-  if(!apiUrl){alert('Set API URL first');isChecking=false;return}
-  document.getElementById('loading').style.display='block';
-  document.getElementById('resultCard').style.display='none';
-
-  var url=apiUrl+'?barcode='+encodeURIComponent(barcode);
-  if(selectedProduct) url+='&product='+encodeURIComponent(selectedProduct);
-  if(selectedCompany) url+='&company='+encodeURIComponent(selectedCompany);
-  if(currentPerson) url+='&person='+encodeURIComponent(currentPerson);
-
-  fetch(url,{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
-      document.getElementById('loading').style.display='none';
-      showResult(data);
-      isChecking=false;
-      document.getElementById('tapOverlay').style.display='flex';
-
-      // If FOUND, update local lists
-      if(data.status==='OK'){
-        // Remove from remaining
-        for(var i=0;i<remainingBarcodes.length;i++){
-          if(remainingBarcodes[i].barcode===barcode){
-            remainingBarcodes.splice(i,1);
-            break;
-          }
-        }
-        // Remove from NF list if it was there (re-scan found after NF)
-        for(var i=0;i<nfItems.length;i++){
-          if(nfItems[i].barcode===barcode){
-            nfItems.splice(i,1);
-            break;
-          }
-        }
-        // Update DP items: change origin from NF to Scanned for this barcode
-        for(var i=0;i<dpItems.length;i++){
-          if(dpItems[i].barcode===barcode && dpItems[i].origin==='NF'){
-            dpItems[i].origin='Scanned';
-          }
-        }
-        scannedItems.unshift({barcode:barcode,details:data.details||''});
-        updateCounter();
-        renderBarcodeList();
-        renderScannedList();
-        renderNFList();
-        renderDPList();
-      }
-      // If NOT FOUND — DON'T auto-add, set pendingSave for confirmation
-      if(data.status==='NO'){
-        pendingSave={barcode:barcode,saveStatus:'NF',details:data.message||'Not found in reference',origin:null};
-        showSaveButton('save-nf','Save as Not Found');
-      }
-      // If DUPLICATE — DON'T auto-add, set pendingSave for confirmation
-      if(data.status==='DUPLICATE'){
-        pendingSave={barcode:barcode,saveStatus:'DUPLICATE',details:data.message||'Duplicate scan',origin:data.origin||'Scanned'};
-        showSaveButton('save-dp','Save as Duplicate');
-      }
-      // If NF_DUPLICATE — DON'T auto-add, set pendingSave for confirmation
-      if(data.status==='NF_DUPLICATE'){
-        pendingSave={barcode:barcode,saveStatus:'NF_DUPLICATE',details:data.message||'Not found duplicate',origin:'NF'};
-        showSaveButton('save-nfdp','Save as NF Duplicate');
-      }
-    })
-    .catch(function(e){
-      document.getElementById('loading').style.display='none';
-      showResult({status:'error',barcode:barcode,message:'Connection error.'});
-      isChecking=false;
-      document.getElementById('tapOverlay').style.display='flex';
-    });
-}
-
-// SHOW RESULT
-function showResult(r){
-  var c=document.getElementById('resultCard');
-  var icon=document.getElementById('rIcon');
-  var stat=document.getElementById('rStatus');
-  var details=document.getElementById('rDetails');
-  var code=document.getElementById('rCode');
-  c.className='result';
-
-  if(r.status==='OK'){
-    var parts=(r.details||'Found').split(/[|,]+/);
-    var firstWord=parts[0].trim().split(/\s+/)[0]||'Found';
-    var secondPart=parts.length>1?parts[1].trim():'';
-    c.classList.add('ok');icon.textContent='\u2705';stat.textContent=firstWord;
-    beep('ok');speak(firstWord);if(navigator.vibrate)navigator.vibrate([100,50,100]);
-    details.textContent=secondPart;
-  } else if(r.status==='NO'){
-    c.classList.add('no');icon.textContent='\u274C';stat.textContent='NOT FOUND';
-    beep('no');speak('Not Found');if(navigator.vibrate)navigator.vibrate([300]);c.classList.add('vib');
-    details.textContent=r.details||'';
-  } else if(r.status==='DUPLICATE'){
-    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
-    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
-    details.textContent=r.details||'';
-  } else if(r.status==='NF_DUPLICATE'){
-    c.classList.add('nf-duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='NF DUPLICATE';
-    beep('no');speak('Not Found Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
-    details.textContent=r.details||'';
-  } else {
-    c.classList.add('error');icon.textContent='\u2699\uFE0F';stat.textContent='ERROR';
-    details.textContent=r.details||'';
-  }
-  code.textContent=r.barcode?'Barcode: '+r.barcode:'';
-  c.style.display='block';
-  setTimeout(function(){c.classList.remove('vib')},500);
-}
-
-// SAVE CONFIRMATION
-function showSaveButton(btnClass,btnText){
-  var area=document.getElementById('saveConfirmArea');
-  var btn=document.getElementById('saveConfirmBtn');
-  btn.className='save-confirm-btn '+btnClass;
-  btn.textContent=btnText;
-  area.style.display='flex';
-}
-
-function confirmSave(){
-  if(!pendingSave) return;
-  var ps=pendingSave;
-  pendingSave=null;
-  document.getElementById('saveConfirmArea').style.display='none';
-
-  // Call backend to save
-  var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson);
-  fetch(url,{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(resp){
-      if(resp.status==='saved'){
-        // Update local lists
-        if(ps.saveStatus==='NF'){
-          var alreadyNF=false;
-          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
-          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details});
-          updateCounter();
-          renderNFList();
-        } else if(ps.saveStatus==='DUPLICATE'){
-          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:ps.origin||'Scanned'});
-          updateCounter();
-          renderDPList();
-        } else if(ps.saveStatus==='NF_DUPLICATE'){
-          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:'NF'});
-          updateCounter();
-          renderDPList();
-        }
-      }
-    })
-    .catch(function(e){
-      alert('Error saving: '+e);
-    });
-}
-
-function skipSave(){
-  pendingSave=null;
-  document.getElementById('saveConfirmArea').style.display='none';
-}
-
-// TAP TO RESUME
-function resumeScan(){
-  if(!isPaused) return;
-  pendingSave=null;
-  document.getElementById('saveConfirmArea').style.display='none';
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('resultCard').style.display='none';
-  isPaused=false;
-  lastBarcode='';
-  if(scanner&&isScanning){
-    try{scanner.resume()}catch(e){}
-  }
-}
-document.getElementById('tapOverlay').addEventListener('click',resumeScan);
-document.getElementById('scannerBox').addEventListener('click',resumeScan);
-
-// PHONE BACK BUTTON
-var currentPage='products';
-var origShowPage=showPage;
-showPage=function(name){
-  origShowPage(name);
-  currentPage=name;
-  history.pushState({page:name},null,'');
-};
-window.addEventListener('popstate',function(e){
-  if(currentPage==='scanner'){
-    if(!selectedProduct){
-      if(scanner&&isScanning){scanner.stop().then(function(){isScanning=false;document.getElementById('startBtn').style.display='flex';document.getElementById('stopBtn').style.display='none';document.getElementById('reader').innerHTML=''})}
-      document.getElementById('resultCard').style.display='none';
-      document.getElementById('tapOverlay').style.display='none';
-      isPaused=false;
-      origShowPage('products');currentPage='products';loadProducts();
-      history.pushState({page:'products'},null,'');
-    } else {
-      goBackToCompanies();
-      history.pushState({page:'companies'},null,'');
-    }
-  } else if(currentPage==='companies'){
-    goBackToProducts();
-    history.pushState({page:'products'},null,'');
-  } else if(currentPage==='settings'){
-    if(apiUrl){
-      origShowPage('products');
-      currentPage='products';
-      history.pushState({page:'products'},null,'');
-    }
-  } else {
-    history.pushState({page:'products'},null,'');
-  }
-});
-history.replaceState({page:apiUrl?'products':'settings'},null,'');
-</script>
-</body>
-</html>
+        Html5QrcodeS
