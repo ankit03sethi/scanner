@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a2e">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <!-- html5-qrcode loaded at end of body -->
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -275,15 +278,15 @@
         <span>Checked</span>
       </div>
       <div id="personCompaniesList"></div>
-      <!-- Packed items list -->
-      <div id="personPackedSection" style="display:none;margin-top:16px">
-        <div class="list-header" style="color:#39ff14;font-size:14px;margin-bottom:8px" id="personPackedHeader">Packed (0)</div>
-        <div class="bc-list" id="personPackedList" style="max-height:none"></div>
+      <!-- Scanned items list (OK status) -->
+      <div id="personScannedSection" style="display:none;margin-top:16px">
+        <div class="list-header" style="color:#39ff14;font-size:14px;margin-bottom:8px" id="personScannedHeader">Scanned (0)</div>
+        <div class="bc-list" id="personScannedList" style="max-height:none"></div>
       </div>
-      <!-- Checked items list -->
-      <div id="personCheckedSection" style="display:none;margin-top:16px">
-        <div class="list-header" style="color:#4fc3f7;font-size:14px;margin-bottom:8px" id="personCheckedHeader">Checked (0)</div>
-        <div class="bc-list" id="personCheckedList" style="max-height:none"></div>
+      <!-- Duplicates list (DUPLICATE/NF_DUPLICATE status) -->
+      <div id="personDupSection" style="display:none;margin-top:16px">
+        <div class="list-header" style="color:#dc2f02;font-size:14px;margin-bottom:8px" id="personDupHeader">Duplicates (0)</div>
+        <div class="bc-list" id="personDupList" style="max-height:none"></div>
       </div>
     </div>
   </div>
@@ -428,7 +431,7 @@ var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false
 var pendingSave=null;
 var currentPerson='';
 var currentChecker='';
-var CURRENT_API='https://script.google.com/macros/s/AKfycby2OZTB10McMwUy7tn6ibtcG8yno_x7ekIwq_VMpNeXpd_wZ0wGRHdwhUX61dNHv7Q/exec';
+var CURRENT_API='https://script.google.com/macros/s/AKfycbzuwlHEmLuvIvtsrMR6o6TCE8rRI4NO-xXfln51aaRAyKF-gs3h7153YbWBYifmksOt/exec';
 var apiUrl=CURRENT_API;
 try{
   var storedUrl=localStorage.getItem('apiUrl')||'';
@@ -693,34 +696,52 @@ function openPersonCompanies(product){
         list.innerHTML='<div style="text-align:center;padding:20px;color:#555">No company data</div>';
       }
 
-      // Render packed items (this person packed — show checker name)
-      var packedItems=data.packedItems||[];
-      var packedSec=document.getElementById('personPackedSection');
-      if(packedItems.length){
-        packedSec.style.display='block';
-        document.getElementById('personPackedHeader').textContent='Packed by Person '+viewingPerson+' ('+packedItems.length+')';
-        document.getElementById('personPackedList').innerHTML=packedItems.map(function(b){
-          var statusTag=b.status==='OK'?'<span class="origin-tag tag-scanned">OK</span>':(b.status==='NF'?'<span class="origin-tag tag-nf">NF</span>':'<span class="origin-tag tag-nf">DP</span>');
-          var checkerInfo=b.checker?'<span class="pc-tag">C'+b.checker+'</span>':'';
-          return '<div class="bc-item" style="background:#1b4332"><span>'+b.barcode+checkerInfo+statusTag+'</span><span class="bc-detail">'+b.company+'</span></div>';
-        }).join('');
-      } else {
-        packedSec.style.display='none';
+      // Merge packed + checked items, group by status
+      var allPersonItems={};
+      var packed=data.packedItems||[];
+      var checked=data.checkedItems||[];
+      packed.forEach(function(b){
+        var key=b.barcode+'_'+b.status;
+        allPersonItems[key]={barcode:b.barcode,status:b.status,company:b.company,packer:viewingPerson,checker:b.checker||''};
+      });
+      checked.forEach(function(b){
+        var key=b.barcode+'_'+b.status;
+        if(allPersonItems[key]){
+          allPersonItems[key].checker=viewingPerson;
+        } else {
+          allPersonItems[key]={barcode:b.barcode,status:b.status,company:b.company,packer:b.packer||'',checker:viewingPerson};
+        }
+      });
+      var scannedArr=[];
+      var dupArr=[];
+      for(var key in allPersonItems){
+        var item=allPersonItems[key];
+        if(item.status==='OK') scannedArr.push(item);
+        else dupArr.push(item);
       }
 
-      // Render checked items (this person checked — show packer name)
-      var checkedItems=data.checkedItems||[];
-      var checkedSec=document.getElementById('personCheckedSection');
-      if(checkedItems.length){
-        checkedSec.style.display='block';
-        document.getElementById('personCheckedHeader').textContent='Checked by Person '+viewingPerson+' ('+checkedItems.length+')';
-        document.getElementById('personCheckedList').innerHTML=checkedItems.map(function(b){
-          var statusTag=b.status==='OK'?'<span class="origin-tag tag-scanned">OK</span>':(b.status==='NF'?'<span class="origin-tag tag-nf">NF</span>':'<span class="origin-tag tag-nf">DP</span>');
-          var packerInfo=b.packer?'<span class="pc-tag">P'+b.packer+'</span>':'';
-          return '<div class="bc-item" style="background:#0d3b66"><span>'+b.barcode+packerInfo+statusTag+'</span><span class="bc-detail">'+b.company+'</span></div>';
+      // Render Scanned section (green)
+      var scannedSec=document.getElementById('personScannedSection');
+      if(scannedArr.length){
+        scannedSec.style.display='block';
+        document.getElementById('personScannedHeader').textContent='Scanned ('+scannedArr.length+')';
+        document.getElementById('personScannedList').innerHTML=scannedArr.map(function(b){
+          return '<div class="bc-item scanned" style="opacity:1;text-decoration:none"><span>'+b.barcode+pcTag(b.packer,b.checker)+'</span><span class="bc-detail">'+b.company+'</span></div>';
         }).join('');
       } else {
-        checkedSec.style.display='none';
+        scannedSec.style.display='none';
+      }
+
+      // Render Duplicates section (red)
+      var dupSec=document.getElementById('personDupSection');
+      if(dupArr.length){
+        dupSec.style.display='block';
+        document.getElementById('personDupHeader').textContent='Duplicates ('+dupArr.length+')';
+        document.getElementById('personDupList').innerHTML=dupArr.map(function(b){
+          return '<div class="bc-item dp-item"><span>'+b.barcode+pcTag(b.packer,b.checker)+'</span><span class="bc-detail">'+b.company+'</span></div>';
+        }).join('');
+      } else {
+        dupSec.style.display='none';
       }
     })
     .catch(function(e){
@@ -1123,11 +1144,11 @@ function checkCode(barcode){
         showSaveButton('save-nf','Save');
       }
       if(data.status==='DUPLICATE'){
-        pendingSave={barcode:barcode,saveStatus:'DUPLICATE',details:data.message||'Duplicate scan',origin:data.origin||'Scanned'};
+        pendingSave={barcode:barcode,saveStatus:'DUPLICATE',details:data.details||data.message||'Duplicate scan',origin:data.origin||'Scanned'};
         showSaveButton('save-dp','Save');
       }
       if(data.status==='NF_DUPLICATE'){
-        pendingSave={barcode:barcode,saveStatus:'NF_DUPLICATE',details:data.message||'Not found duplicate',origin:'NF'};
+        pendingSave={barcode:barcode,saveStatus:'NF_DUPLICATE',details:data.details||data.message||'Not found duplicate',origin:'NF'};
         showSaveButton('save-dp','Save');
       }
     })
@@ -1150,10 +1171,4 @@ function showResult(r){
 
   if(r.status==='OK'){
     var parts=(r.details||'Found').split(/[|,]+/);
-    var firstWord=parts[0].trim().split(/\s+/)[0]||'Found';
-    var secondPart=parts.length>1?parts[1].trim():'';
-    c.classList.add('ok');icon.textContent='\u2705';stat.textContent=firstWord;
-    beep('ok');speak(firstWord);if(navigator.vibrate)navigator.vibrate([100,50,100]);
-    details.textContent=secondPart;
-  } else if(r.status==='NO'){
-    c.classList.add('no');icon.textContent
+    var firstWord=parts[
