@@ -183,8 +183,8 @@
     <h1>Order Scanner <span class="dot" id="dot"></span></h1>
   </div>
 
-  <!-- PAGE: SETTINGS (active by default, JS will switch if API URL exists) -->
-  <div class="page active" id="page-settings">
+  <!-- PAGE: SETTINGS -->
+  <div class="page" id="page-settings">
     <div class="setup">
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
@@ -194,8 +194,8 @@
     </div>
   </div>
 
-  <!-- PAGE: PRODUCT SUMMARY -->
-  <div class="page" id="page-products">
+  <!-- PAGE: PRODUCT SUMMARY (active by default) -->
+  <div class="page active" id="page-products">
     <div class="loading-page" id="productsLoading"><div class="spinner"></div><div>Loading products...</div></div>
     <div id="productsContent" style="display:none">
       <div class="total-box" style="display:flex;align-items:center;justify-content:space-between">
@@ -457,14 +457,19 @@ function getNavState(){
 }
 
 function initApp(){
-  if(apiUrl){
-    document.getElementById('apiUrl').value=apiUrl;
-    setStatus(true);
-    showPage('products');
-    loadProducts();
-  } else {
-    setStatus(false);
-    showPage('settings');
+  try{
+    if(apiUrl){
+      document.getElementById('apiUrl').value=apiUrl;
+      setStatus(true);
+      showPage('products');
+      loadProducts();
+    } else {
+      setStatus(false);
+      showPage('settings');
+    }
+  }catch(err){
+    try{document.getElementById('page-products').className='page active'}catch(e2){}
+    try{loadProducts()}catch(e3){}
   }
 }
 
@@ -1317,6 +1322,4 @@ function skipSave(){
 function resumeScan(){
   if(!isPaused) return;
   // If save/skip buttons are showing, user MUST click one of them
-  if(pendingSave) return;
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('resultCard').style.display='none';
+  if(pendingSave) re
