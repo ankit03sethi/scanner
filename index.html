@@ -456,52 +456,17 @@ function getNavState(){
   try{var p=sessionStorage.getItem('navPage');var e=sessionStorage.getItem('navExtra');return{page:p,extra:e?JSON.parse(e):null}}catch(e){return{page:null,extra:null}}
 }
 
-var appInitDone=false;
 function initApp(){
-  if(appInitDone) return;
-  appInitDone=true;
-  try{
-    if(apiUrl){
-      document.getElementById('apiUrl').value=apiUrl;
-      setStatus(true);
-      // Restore last page if available
-      var nav=getNavState();
-      if(nav.page&&nav.page!=='settings'){
-        showPage('products');
-        loadProducts();
-        // Restore deeper pages
-        if(nav.page==='companies'&&nav.extra&&nav.extra.product){
-          selectedProduct=nav.extra.product;
-          openCompanyPage(nav.extra.product,0,0);
-          loadCompanies(nav.extra.product);
-        } else if(nav.page==='scanner'&&nav.extra){
-          selectedProduct=nav.extra.product||'';
-          selectedCompany=nav.extra.company||'';
-        } else if(nav.page==='person-summary'&&nav.extra&&nav.extra.person){
-          openPersonSummary(nav.extra.person);
-        } else if(nav.page==='person-products'&&nav.extra&&nav.extra.person){
-          viewingPerson=nav.extra.person;
-          openPersonProducts();
-        } else if(nav.page==='person-companies'&&nav.extra&&nav.extra.person&&nav.extra.product){
-          viewingPerson=nav.extra.person;
-          openPersonCompanies(nav.extra.product);
-        }
-      } else {
-        showPage('products');
-        loadProducts();
-      }
-    } else {
-      setStatus(false);
-      showPage('settings');
-    }
-  }catch(err){
-    console.error('Init error:',err);
+  if(apiUrl){
+    document.getElementById('apiUrl').value=apiUrl;
+    setStatus(true);
+    showPage('products');
+    loadProducts();
+  } else {
+    setStatus(false);
     showPage('settings');
   }
 }
-
-// TRY INIT EARLY - before addEventListener calls that might crash on mobile
-try{initApp()}catch(e){}
 
 // HELPER: Build Not Found / Duplicates tag string
 function nfdpTag(nf,dp){
@@ -1318,4 +1283,40 @@ function confirmSave(){
       if(resp.status==='saved'){
         if(ps.saveStatus==='NF'){
           var alreadyNF=false;
-          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===p
+          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
+          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details,packer:currentPerson,checker:currentChecker});
+          updateCounter();
+          renderNFList();
+        } else if(ps.saveStatus==='DUPLICATE'||ps.saveStatus==='NF_DUPLICATE'){
+          var origin=(ps.saveStatus==='NF_DUPLICATE')?'NF':(ps.origin||'Scanned');
+          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:origin,packer:currentPerson,checker:currentChecker});
+          updateCounter();
+          renderDPList();
+        }
+      }
+    })
+    .catch(function(e){
+      alert('Error saving: '+e);
+    });
+}
+
+function skipSave(){
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+  // Resume scanning after skip
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+}
+
+// TAP TO RESUME - blocked when Save/Skip is showing
+function resumeScan(){
+  if(!isPaused) return;
+  // If save/skip buttons are showing, user MUST click one of them
+  if(pendingSave) return;
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
