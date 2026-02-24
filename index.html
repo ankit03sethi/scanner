@@ -184,14 +184,8 @@
     <div class="sub"><span class="dot" id="dot"></span></div>
   </div>
 
-  <!-- Loading indicator shown until JS runs -->
-  <div id="mobileLoader" style="text-align:center;padding:60px 20px;color:#39ff14;font-size:16px;font-weight:600">
-    <div style="width:36px;height:36px;border:3px solid #333;border-top-color:#39ff14;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px"></div>
-    Loading...
-  </div>
-
   <!-- PAGE: SETTINGS (active by default, JS will switch if API URL exists) -->
-  <div class="page" id="page-settings">
+  <div class="page active" id="page-settings">
     <div class="setup">
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
@@ -456,9 +450,6 @@ var viewingPerson='';
 var viewingPersonProduct='';
 function initApp(){
   try{
-    // Hide mobile loader
-    var loader=document.getElementById('mobileLoader');
-    if(loader)loader.style.display='none';
     if(apiUrl){
       document.getElementById('apiUrl').value=apiUrl;
       setStatus(true);
@@ -1165,4 +1156,19 @@ function checkCode(barcode){
       document.getElementById('loading').style.display='none';
       showResult({status:'error',barcode:barcode,message:'Connection error.'});
       isChecking=false;
- 
+      document.getElementById('tapOverlay').style.display='flex';
+    });
+}
+
+// SHOW RESULT
+function showResult(r){
+  var c=document.getElementById('resultCard');
+  var icon=document.getElementById('rIcon');
+  var stat=document.getElementById('rStatus');
+  var details=document.getElementById('rDetails');
+  var code=document.getElementById('rCode');
+  c.className='result';
+
+  if(r.status==='OK'){
+    var parts=(r.details||'Found').split(/[|,]+/);
+    var firstWord=parts[
