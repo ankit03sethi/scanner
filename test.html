@@ -17,7 +17,7 @@ button{width:100%;padding:15px;margin:8px 0;border:none;border-radius:10px;font-
 
 <button style="background:#4fc3f7;color:#1a1a2e" onclick="testFetch()">2. Test API Fetch</button>
 
-<button style="background:#39ff14;color:#1a1a2e" onclick="window.open('https://script.google.com/macros/s/AKfycbyfUqKRyZlRDgQVtkKUd-oOYDfyvxW7ElWj5O3BdYPUP3zDi-HYOgq7bWAvb94VgBrj/exec?action=summary','_blank')">3. Open API URL Directly</button>
+<button style="background:#39ff14;color:#1a1a2e" onclick="window.open('https://script.google.com/macros/s/AKfycbw0N-4mjxPq-h14XD4afsxmjO5a7E8aOGg-beQOk5dZtyR15AIASE5_hudgwLYaiq7p/exec?action=summary','_blank')">3. Open API URL Directly</button>
 
 <div id="log">Click a button above to test...</div>
 
@@ -29,7 +29,7 @@ function log(msg,color){
 function testFetch(){
   var el=document.getElementById('log');
   el.innerHTML='';
-  var url='https://script.google.com/macros/s/AKfycbyfUqKRyZlRDgQVtkKUd-oOYDfyvxW7ElWj5O3BdYPUP3zDi-HYOgq7bWAvb94VgBrj/exec?action=summary';
+  var url='https://script.google.com/macros/s/AKfycbw0N-4mjxPq-h14XD4afsxmjO5a7E8aOGg-beQOk5dZtyR15AIASE5_hudgwLYaiq7p/exec?action=summary';
   var t=Date.now();
   log('Fetching API...','#4fc3f7');
   log('URL: '+url.substring(0,70)+'...','#888');

@@ -439,7 +439,7 @@ var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false
 var pendingSave=null;
 var currentPerson='';
 var currentChecker='';
-var CURRENT_API='https://script.google.com/macros/s/AKfycbyfUqKRyZlRDgQVtkKUd-oOYDfyvxW7ElWj5O3BdYPUP3zDi-HYOgq7bWAvb94VgBrj/exec';
+var CURRENT_API='https://script.google.com/macros/s/AKfycbw0N-4mjxPq-h14XD4afsxmjO5a7E8aOGg-beQOk5dZtyR15AIASE5_hudgwLYaiq7p/exec';
 var apiUrl=CURRENT_API;
 
 var selectedProduct='';
@@ -1267,4 +1267,173 @@ function checkCode(barcode){
         showSaveButton('save-dp','Save');
       }
     }).catch(function(e){
-      document.getElementB
+      document.getElementById('loading').style.display='none';
+      showResult({status:'error',barcode:barcode,message:'Connection error.'});
+      isChecking=false;
+      document.getElementById('tapOverlay').style.display='flex';
+    });
+}
+
+// SHOW RESULT
+function showResult(r){
+  var c=document.getElementById('resultCard');
+  var icon=document.getElementById('rIcon');
+  var stat=document.getElementById('rStatus');
+  var details=document.getElementById('rDetails');
+  var code=document.getElementById('rCode');
+  c.className='result';
+
+  if(r.status==='OK'){
+    var parts=(r.details||'Found').split(/[|,]+/);
+    var firstWord=parts[0].trim().split(/\s+/)[0]||'Found';
+    var secondPart=parts.length>1?parts[1].trim():'';
+    c.classList.add('ok');icon.textContent='\u2705';stat.textContent=firstWord;
+    beep('ok');speak(firstWord);if(navigator.vibrate)navigator.vibrate([100,50,100]);
+    details.textContent=secondPart;
+  } else if(r.status==='NO'){
+    c.classList.add('no');icon.textContent='\u274C';stat.textContent='NOT FOUND';
+    beep('no');speak('Not Found');if(navigator.vibrate)navigator.vibrate([300]);c.classList.add('vib');
+    details.textContent=r.details||'';
+  } else if(r.status==='DUPLICATE'){
+    var originTag=r.origin==='NF'?' (was NF)':' (was Scanned)';
+    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
+    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
+    details.innerHTML='<span class="origin-tag '+(r.origin==='NF'?'tag-nf':'tag-scanned')+'">'+((r.origin||'Scanned'))+'</span> '+(r.details||'');
+  } else if(r.status==='NF_DUPLICATE'){
+    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
+    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
+    details.innerHTML='<span class="origin-tag tag-nf">NF</span> '+(r.details||'');
+  } else {
+    c.classList.add('error');icon.textContent='\u2699\uFE0F';stat.textContent='ERROR';
+    details.textContent=r.details||'';
+  }
+  code.textContent=r.barcode?'Barcode: '+r.barcode:'';
+  c.style.display='block';
+  setTimeout(function(){c.classList.remove('vib')},500);
+}
+
+// SAVE CONFIRMATION
+function showSaveButton(btnClass,btnText){
+  var area=document.getElementById('saveConfirmArea');
+  var btn=document.getElementById('saveConfirmBtn');
+  btn.className='save-confirm-btn '+btnClass;
+  btn.textContent=btnText;
+  area.style.display='flex';
+}
+
+function confirmSave(){
+  if(!pendingSave) return;
+  var ps=pendingSave;
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+  // Resume scanning immediately after save
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+
+  var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson)+'&checker='+encodeURIComponent(currentChecker);
+  fetch(url,{redirect:'follow'})
+    .then(function(r){return r.json()})
+    .then(function(resp){
+      if(resp.status==='saved'){
+        if(ps.saveStatus==='NF'){
+          var alreadyNF=false;
+          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
+          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details,packer:currentPerson,checker:currentChecker});
+          updateCounter();
+          renderNFList();
+        } else if(ps.saveStatus==='DUPLICATE'||ps.saveStatus==='NF_DUPLICATE'){
+          var origin=(ps.saveStatus==='NF_DUPLICATE')?'NF':(ps.origin||'Scanned');
+          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:origin,packer:currentPerson,checker:currentChecker});
+          updateCounter();
+          renderDPList();
+        }
+      }
+    }).catch(function(e){
+      alert('Error saving');
+    });
+}
+
+function skipSave(){
+  pendingSave=null;
+  document.getElementById('saveConfirmArea').style.display='none';
+  // Resume scanning after skip
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+}
+
+// TAP TO RESUME - blocked when Save/Skip is showing
+function resumeScan(){
+  if(!isPaused) return;
+  // If save/skip buttons are showing, user MUST click one of them
+  if(pendingSave) return;
+  document.getElementById('tapOverlay').style.display='none';
+  document.getElementById('resultCard').style.display='none';
+  isPaused=false;
+  lastBarcode='';
+  if(scanner&&isScanning){
+    try{scanner.resume()}catch(e){}
+  }
+}
+try{document.getElementById('tapOverlay').addEventListener('click',resumeScan)}catch(e){}
+try{document.getElementById('scannerBox').addEventListener('click',resumeScan)}catch(e){}
+
+// PHONE BACK BUTTON
+var currentPage='products';
+var origShowPage=showPage;
+showPage=function(name){
+  origShowPage(name);
+  currentPage=name;
+  try{history.pushState({page:name},null,'')}catch(e){}
+};
+window.addEventListener('popstate',function(e){
+  if(currentPage==='scanner'){
+    if(!selectedProduct){
+      if(scanner&&isScanning){scanner.stop().then(function(){isScanning=false;document.getElementById('startBtn').style.display='flex';document.getElementById('stopBtn').style.display='none';document.getElementById('reader').innerHTML=''})}
+      document.getElementById('resultCard').style.display='none';
+      document.getElementById('tapOverlay').style.display='none';
+      isPaused=false;
+      origShowPage('products');currentPage='products';loadProducts();
+      history.pushState({page:'products'},null,'');
+    } else {
+      goBackToCompanies();
+      history.pushState({page:'companies'},null,'');
+    }
+  } else if(currentPage==='companies'){
+    goBackToProducts();
+    history.pushState({page:'products'},null,'');
+  } else if(currentPage==='person-companies'){
+    goBackToPersonProducts();
+    history.pushState({page:'person-products'},null,'');
+  } else if(currentPage==='person-products'){
+    goBackToPersonSummary();
+    history.pushState({page:'person-summary'},null,'');
+  } else if(currentPage==='person-summary'){
+    goBackToProducts();
+    history.pushState({page:'products'},null,'');
+  } else if(currentPage==='status-list'){
+    goBackToProducts();
+    history.pushState({page:'products'},null,'');
+  } else if(currentPage==='settings'){
+    if(apiUrl){
+      origShowPage('products');
+      currentPage='products';
+      history.pushState({page:'products'},null,'');
+    }
+  } else {
+    history.pushState({page:'products'},null,'');
+  }
+});
+try{history.replaceState({page:apiUrl?'products':'settings'},null,'')}catch(e){}
+</script>
+</body>
+</html>
