@@ -135,6 +135,16 @@
     .person-picker-grid{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:280px}
     .person-btn{width:60px;height:60px;border-radius:12px;border:2px solid #0f3460;background:#16213e;color:#39ff14;font-size:24px;font-weight:700;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
     .person-btn:active{transform:scale(0.9);border-color:#39ff14;background:#0f3460}
+    /* Packer picker - neon pink */
+    #packerPicker .person-picker-title{color:#ff6ec7}
+    #packerPicker .person-picker-sub{color:#ff6ec7}
+    #packerPicker .person-btn{border-color:#ff6ec7;color:#ff6ec7;background:#2a0a1e}
+    #packerPicker .person-btn:active{border-color:#ff99dd;background:#4a0a2e}
+    /* Checker picker - neon purple */
+    #checkerPicker .person-picker-title{color:#bf5fff}
+    #checkerPicker .person-picker-sub{color:#bf5fff}
+    #checkerPicker .person-btn{border-color:#bf5fff;color:#bf5fff;background:#1a0a2e}
+    #checkerPicker .person-btn:active{border-color:#d98fff;background:#2a0a3e}
 
     /* Close Scanner Button */
     .close-scanner-btn{width:100%;padding:12px;border:none;border-radius:10px;background:#dc2f02;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px;display:none}
@@ -461,8 +471,29 @@ function initApp(){
     if(apiUrl){
       document.getElementById('apiUrl').value=apiUrl;
       setStatus(true);
-      showPage('products');
-      loadProducts();
+      var nav=getNavState();
+      if(nav.page&&nav.page!=='settings'&&nav.page!=='products'){
+        showPage('products');
+        loadProducts();
+        try{
+          if(nav.page==='companies'&&nav.extra&&nav.extra.product){
+            selectedProduct=nav.extra.product;
+            openCompanyPage(nav.extra.product,0,0);
+            loadCompanies(nav.extra.product);
+          } else if(nav.page==='person-summary'&&nav.extra&&nav.extra.person){
+            openPersonSummary(nav.extra.person);
+          } else if(nav.page==='person-products'&&nav.extra&&nav.extra.person){
+            viewingPerson=nav.extra.person;
+            openPersonProducts();
+          } else if(nav.page==='person-companies'&&nav.extra&&nav.extra.person&&nav.extra.product){
+            viewingPerson=nav.extra.person;
+            openPersonCompanies(nav.extra.product);
+          }
+        }catch(navErr){}
+      } else {
+        showPage('products');
+        loadProducts();
+      }
     } else {
       setStatus(false);
       showPage('settings');
@@ -524,44 +555,56 @@ function setStatus(ok){
   document.getElementById('dot').className='dot '+(ok?'on':'off');
 }
 
-// LOAD PRODUCTS
+// LOAD PRODUCTS - with XHR fallback for mobile compatibility
+function loadProductsFromData(data){
+  document.getElementById('productsLoading').style.display='none';
+  document.getElementById('productsContent').style.display='block';
+  var t=data.total||0;
+  var ts=data.totalScanned||0;
+  var tnf=data.totalNF||0;
+  var tdp=data.totalDP||0;
+  document.getElementById('totalCount').textContent=ts+'/'+t;
+  document.getElementById('statOk').textContent='Successful - '+ts;
+  document.getElementById('statNf').textContent='Not Found - '+tnf;
+  document.getElementById('statNf').style.display=tnf?'block':'none';
+  document.getElementById('statDp').textContent='Duplicates - '+tdp;
+  document.getElementById('statDp').style.display=tdp?'block':'none';
+  document.getElementById('statTotal').textContent='Total - '+(ts+tnf+tdp);
+
+  var list=document.getElementById('productList');
+  list.innerHTML='';
+  if(data.products){
+    data.products.forEach(function(p){
+      var li=document.createElement('li');
+      li.className='product-item';
+      li.innerHTML='<div><div class="product-name">'+p.name+'</div></div><div style="text-align:right"><div style="font-size:22px;color:#39ff14;font-weight:700">'+(p.scanned||0)+'/'+p.count+'</div><div class="product-nfdp">'+nfdpTag(p.nf||0,p.dp||0)+'</div></div>';
+      li.onclick=function(){openCompanyPage(p.name,p.scanned||0,p.count)};
+      list.appendChild(li);
+    });
+  }
+}
+function xhrGet(url,onSuccess,onError){
+  var xhr=new XMLHttpRequest();
+  xhr.open('GET',url,true);
+  xhr.onload=function(){
+    if(xhr.status>=200&&xhr.status<400){
+      try{onSuccess(JSON.parse(xhr.responseText))}catch(e){onError(e)}
+    } else {onError(new Error('HTTP '+xhr.status))}
+  };
+  xhr.onerror=function(){onError(new Error('XHR failed'))};
+  xhr.timeout=30000;
+  xhr.ontimeout=function(){onError(new Error('Timeout'))};
+  xhr.send();
+}
 function loadProducts(){
   document.getElementById('productsLoading').style.display='block';
   document.getElementById('productsContent').style.display='none';
-
-  fetch(apiUrl+'?action=summary',{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
-      document.getElementById('productsLoading').style.display='none';
-      document.getElementById('productsContent').style.display='block';
-      var t=data.total||0;
-      var ts=data.totalScanned||0;
-      var tnf=data.totalNF||0;
-      var tdp=data.totalDP||0;
-      document.getElementById('totalCount').textContent=ts+'/'+t;
-      document.getElementById('statOk').textContent='Successful - '+ts;
-      document.getElementById('statNf').textContent='Not Found - '+tnf;
-      document.getElementById('statNf').style.display=tnf?'block':'none';
-      document.getElementById('statDp').textContent='Duplicates - '+tdp;
-      document.getElementById('statDp').style.display=tdp?'block':'none';
-      document.getElementById('statTotal').textContent='Total - '+(ts+tnf+tdp);
-
-      var list=document.getElementById('productList');
-      list.innerHTML='';
-      if(data.products){
-        data.products.forEach(function(p){
-          var li=document.createElement('li');
-          li.className='product-item';
-          li.innerHTML='<div><div class="product-name">'+p.name+'</div></div><div style="text-align:right"><div style="font-size:22px;color:#39ff14;font-weight:700">'+(p.scanned||0)+'/'+p.count+'</div><div class="product-nfdp">'+nfdpTag(p.nf||0,p.dp||0)+'</div></div>';
-          li.onclick=function(){openCompanyPage(p.name,p.scanned||0,p.count)};
-          list.appendChild(li);
-        });
-      }
-    })
-    .catch(function(e){
-      document.getElementById('productsLoading').style.display='none';
-      alert('Error loading products. Check API URL.');
-    });
+  var url=apiUrl+'?action=summary';
+  xhrGet(url,loadProductsFromData,function(e){
+    document.getElementById('productsLoading').style.display='none';
+    document.getElementById('productsContent').style.display='block';
+    document.getElementById('productList').innerHTML='<li style="padding:20px;text-align:center;color:#dc2f02">Error loading. Pull down to refresh.</li>';
+  });
 }
 
 // OPEN COMPANY PAGE
@@ -579,9 +622,7 @@ function loadCompanies(product){
   document.getElementById('companiesLoading').style.display='block';
   document.getElementById('companiesContent').style.display='none';
 
-  fetch(apiUrl+'?action=companies&product='+encodeURIComponent(product),{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(apiUrl+'?action=companies&product='+encodeURIComponent(product),function(data){
       document.getElementById('companiesLoading').style.display='none';
       document.getElementById('companiesContent').style.display='block';
 
@@ -608,8 +649,7 @@ function loadCompanies(product){
           list.appendChild(li);
         });
       }
-    })
-    .catch(function(e){
+    },function(e){
       document.getElementById('companiesLoading').style.display='none';
       alert('Error loading companies.');
     });
@@ -651,16 +691,13 @@ function openPersonSummary(num){
   document.getElementById('personSummaryLoading').style.display='block';
   document.getElementById('personSummaryContent').style.display='none';
 
-  fetch(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(apiUrl+'?action=personsummary&person='+encodeURIComponent(viewingPerson),function(data){
       document.getElementById('personSummaryLoading').style.display='none';
       document.getElementById('personSummaryContent').style.display='block';
       document.getElementById('personPackedTotal').textContent=data.packed||0;
       document.getElementById('personCheckedTotal').textContent=data.checked||0;
-    })
-    .catch(function(e){
-      document.getElementById('personSummaryLoading').innerHTML='<div style="color:#e09f3e;padding:20px;text-align:center">Error loading person data: '+e.message+'</div>';
+    },function(e){
+      document.getElementById('personSummaryLoading').innerHTML='<div style="color:#e09f3e;padding:20px;text-align:center">Error loading person data</div>';
     });
 }
 
@@ -671,9 +708,7 @@ function openPersonProducts(){
   document.getElementById('personProductsLoading').style.display='block';
   document.getElementById('personProductsContent').style.display='none';
 
-  fetch(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(apiUrl+'?action=personproducts&person='+encodeURIComponent(viewingPerson),function(data){
       document.getElementById('personProductsLoading').style.display='none';
       document.getElementById('personProductsContent').style.display='block';
 
@@ -691,8 +726,7 @@ function openPersonProducts(){
       if(!data.products||!data.products.length){
         list.innerHTML='<div style="text-align:center;padding:20px;color:#555">No data for this person</div>';
       }
-    })
-    .catch(function(e){
+    },function(e){
       document.getElementById('personProductsLoading').style.display='none';
       alert('Error loading person products.');
     });
@@ -706,9 +740,7 @@ function openPersonCompanies(product){
   document.getElementById('personCompaniesLoading').style.display='block';
   document.getElementById('personCompaniesContent').style.display='none';
 
-  fetch(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(apiUrl+'?action=personcompanies&person='+encodeURIComponent(viewingPerson)+'&product='+encodeURIComponent(product),function(data){
       document.getElementById('personCompaniesLoading').style.display='none';
       document.getElementById('personCompaniesContent').style.display='block';
 
@@ -770,8 +802,7 @@ function openPersonCompanies(product){
       // Initially hide item sections until a company is clicked
       document.getElementById('personScannedSection').style.display='none';
       document.getElementById('personDupSection').style.display='none';
-    })
-    .catch(function(e){
+    },function(e){
       document.getElementById('personCompaniesLoading').style.display='none';
       alert('Error loading person companies.');
     });
@@ -822,9 +853,7 @@ function openStatusList(type){
   document.getElementById('statusListLoading').style.display='block';
   document.getElementById('statusListContent').style.display='none';
 
-  fetch(apiUrl+'?action=productdata&product=&company=',{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(apiUrl+'?action=productdata&product=&company=',function(data){
       document.getElementById('statusListLoading').style.display='none';
       document.getElementById('statusListContent').style.display='block';
       var items=[];
@@ -853,8 +882,7 @@ function openStatusList(type){
           return '<div class="bc-item dp-item"><span>'+b.barcode+pcTag(b.packer,b.checker)+'<span class="origin-tag '+originClass+'">'+originLabel+'</span></span><span class="bc-detail">'+b.details+'</span></div>';
         }).join('');
       }
-    })
-    .catch(function(e){
+    },function(e){
       document.getElementById('statusListLoading').style.display='none';
       document.getElementById('statusListContent').style.display='block';
       document.getElementById('statusListItems').innerHTML='<div style="text-align:center;padding:20px;color:#e09f3e">Error loading data</div>';
@@ -944,9 +972,7 @@ function loadProductData(product,company){
   var url=apiUrl+'?action=productdata&product='+encodeURIComponent(product);
   if(company) url+='&company='+encodeURIComponent(company);
 
-  fetch(url,{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(url,function(data){
       totalForProduct=data.total||0;
       remainingBarcodes=data.barcodes||[];
       scannedItems=data.scannedItems||[];
@@ -958,8 +984,7 @@ function loadProductData(product,company){
       renderScannedList();
       renderNFList();
       renderDPList();
-    })
-    .catch(function(e){
+    },function(e){
       document.getElementById('remainingList').innerHTML='<div style="text-align:center;padding:16px;color:#e09f3e">Error loading data</div>';
     });
 }
@@ -1165,15 +1190,12 @@ function checkCode(barcode){
   if(currentPerson) url+='&person='+encodeURIComponent(currentPerson);
   if(currentChecker) url+='&checker='+encodeURIComponent(currentChecker);
 
-  fetch(url,{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(data){
+  xhrGet(url,function(data){
       document.getElementById('loading').style.display='none';
       showResult(data);
       isChecking=false;
 
       if(data.status==='OK'){
-        // Only show tap overlay for OK results (no save/skip needed)
         document.getElementById('tapOverlay').style.display='flex';
         for(var i=0;i<remainingBarcodes.length;i++){
           if(remainingBarcodes[i].barcode===barcode){
@@ -1211,8 +1233,7 @@ function checkCode(barcode){
         pendingSave={barcode:barcode,saveStatus:'NF_DUPLICATE',details:data.details||data.message||'Not found duplicate',origin:'NF'};
         showSaveButton('save-dp','Save');
       }
-    })
-    .catch(function(e){
+    },function(e){
       document.getElementById('loading').style.display='none';
       showResult({status:'error',barcode:barcode,message:'Connection error.'});
       isChecking=false;
@@ -1282,44 +1303,5 @@ function confirmSave(){
   }
 
   var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson)+'&checker='+encodeURIComponent(currentChecker);
-  fetch(url,{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(resp){
-      if(resp.status==='saved'){
-        if(ps.saveStatus==='NF'){
-          var alreadyNF=false;
-          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
-          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details,packer:currentPerson,checker:currentChecker});
-          updateCounter();
-          renderNFList();
-        } else if(ps.saveStatus==='DUPLICATE'||ps.saveStatus==='NF_DUPLICATE'){
-          var origin=(ps.saveStatus==='NF_DUPLICATE')?'NF':(ps.origin||'Scanned');
-          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:origin,packer:currentPerson,checker:currentChecker});
-          updateCounter();
-          renderDPList();
-        }
-      }
-    })
-    .catch(function(e){
-      alert('Error saving: '+e);
-    });
-}
-
-function skipSave(){
-  pendingSave=null;
-  document.getElementById('saveConfirmArea').style.display='none';
-  // Resume scanning after skip
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('resultCard').style.display='none';
-  isPaused=false;
-  lastBarcode='';
-  if(scanner&&isScanning){
-    try{scanner.resume()}catch(e){}
-  }
-}
-
-// TAP TO RESUME - blocked when Save/Skip is showing
-function resumeScan(){
-  if(!isPaused) return;
-  // If save/skip buttons are showing, user MUST click one of them
-  if(pendingSave) re
+  xhrGet(url,function(resp){
+      if(resp.status==='saved
