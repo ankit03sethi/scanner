@@ -1037,8 +1037,8 @@ function selectChecker(num){
 }
 
 // Stop picker clicks from bubbling to scannerBox
-document.getElementById('packerPicker').addEventListener('click',function(e){e.stopPropagation()});
-document.getElementById('checkerPicker').addEventListener('click',function(e){e.stopPropagation()});
+try{document.getElementById('packerPicker').addEventListener('click',function(e){e.stopPropagation()})}catch(e){}
+try{document.getElementById('checkerPicker').addEventListener('click',function(e){e.stopPropagation()})}catch(e){}
 
 function closeScanner(){
   if(scanner&&isScanning){
@@ -1170,5 +1170,4 @@ function showResult(r){
   c.className='result';
 
   if(r.status==='OK'){
-    var parts=(r.details||'Found').split(/[|,]+/);
-    var firstWord=parts[
+    var parts=(r.details||'Found').split(/[|,]+
