@@ -456,7 +456,10 @@ function getNavState(){
   try{var p=sessionStorage.getItem('navPage');var e=sessionStorage.getItem('navExtra');return{page:p,extra:e?JSON.parse(e):null}}catch(e){return{page:null,extra:null}}
 }
 
+var appInitDone=false;
 function initApp(){
+  if(appInitDone) return;
+  appInitDone=true;
   try{
     if(apiUrl){
       document.getElementById('apiUrl').value=apiUrl;
@@ -496,6 +499,9 @@ function initApp(){
     showPage('settings');
   }
 }
+
+// TRY INIT EARLY - before addEventListener calls that might crash on mobile
+try{initApp()}catch(e){}
 
 // HELPER: Build Not Found / Duplicates tag string
 function nfdpTag(nf,dp){
@@ -1173,9 +1179,9 @@ function doManual(){
   checkCode(v);
 }
 
-document.getElementById('manualCode').addEventListener('keydown',function(e){
+try{document.getElementById('manualCode').addEventListener('keydown',function(e){
   if(e.key==='Enter') doManual();
-});
+})}catch(e){}
 
 // API CALL — now sends both person (packer) and checker
 function checkCode(barcode){
@@ -1312,6 +1318,4 @@ function confirmSave(){
       if(resp.status==='saved'){
         if(ps.saveStatus==='NF'){
           var alreadyNF=false;
-          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
-          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details,packer:currentPerson,checker:currentChecker});
-          updateCounter()
+          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===p
