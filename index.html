@@ -101,11 +101,11 @@
     .list-section{margin-top:8px}
     .list-header{font-size:13px;color:#8899aa;font-weight:600;margin-bottom:6px;padding:0 4px}
     .bc-list{max-height:250px;overflow-y:auto}
-    .bc-item{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:8px 10px;background:#16213e;border-radius:6px;margin-bottom:4px;font-size:12px;font-family:monospace;color:#ccc;gap:4px}
+    .bc-item{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:8px 10px;background:#16213e;border-radius:6px;margin-bottom:4px;font-size:12px;font-family:monospace;color:#ccc;gap:4px;overflow:visible}
     .bc-item.scanned{background:#1b4332;color:#39ff14;text-decoration:line-through;opacity:0.6}
     .bc-item.nf-item{background:#3d2e00;color:#e09f3e;border:1px solid #7c5800}
     .bc-item.dp-item{background:#3d0a0a;color:#dc2f02;border:1px solid #6a040f}
-    .bc-detail{font-size:11px;color:#8899aa;font-family:-apple-system,sans-serif;max-width:50%;text-align:right}
+    .bc-detail{font-size:11px;color:#8899aa;font-family:-apple-system,sans-serif;max-width:45%;text-align:right;overflow:hidden;text-overflow:ellipsis}
     .pc-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;display:inline-block;background:#0f3460;color:#39ff14;white-space:nowrap}
     .origin-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;display:inline-block;white-space:nowrap}
     .origin-tag.tag-scanned{background:#1b4332;color:#39ff14}
@@ -890,9 +890,13 @@ function selectPacker(num){
 function selectChecker(num){
   currentChecker=String(num);
   document.getElementById('checkerPicker').style.display='none';
-  document.getElementById('counterProduct').innerHTML=document.getElementById('counterProduct').textContent+'<span class="person-badge">Packer '+currentPerson+' | Checker '+currentChecker+'</span>';
+  document.getElementById('counterProduct').innerHTML=document.getElementById('counterProduct').textContent+'<span class="person-badge">P'+currentPerson+' | C'+currentChecker+'</span>';
   startScan();
 }
+
+// Stop picker clicks from bubbling to scannerBox
+document.getElementById('packerPicker').addEventListener('click',function(e){e.stopPropagation()});
+document.getElementById('checkerPicker').addEventListener('click',function(e){e.stopPropagation()});
 
 function closeScanner(){
   if(scanner&&isScanning){
@@ -1159,14 +1163,4 @@ window.addEventListener('popstate',function(e){
     if(apiUrl){
       origShowPage('products');
       currentPage='products';
-      history.pushState({page:'products'},null,'');
-    }
-  } else {
-    history.pushState({page:'products'},null,'');
-  }
-});
-history.replaceState({page:apiUrl?'products':'settings'},null,'');
-</script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-</body>
-</html>
+      
