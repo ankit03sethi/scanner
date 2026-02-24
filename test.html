@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Test</title>
+<style>
+body{font-family:sans-serif;background:#1a1a2e;color:#eee;padding:20px}
+button{width:100%;padding:15px;margin:8px 0;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+#log{margin-top:16px;padding:12px;background:#16213e;border-radius:10px;font-size:13px;line-height:1.8;word-break:break-all;min-height:100px}
+</style>
+</head>
+<body>
+<h2 style="color:#39ff14;text-align:center">API Test Page</h2>
+
+<button style="background:#e09f3e;color:#1a1a2e" onclick="alert('JavaScript is working!')">1. Check JS Works</button>
+
+<button style="background:#4fc3f7;color:#1a1a2e" onclick="testFetch()">2. Test API Fetch</button>
+
+<button style="background:#39ff14;color:#1a1a2e" onclick="window.open('https://script.google.com/macros/s/AKfycbyfUqKRyZlRDgQVtkKUd-oOYDfyvxW7ElWj5O3BdYPUP3zDi-HYOgq7bWAvb94VgBrj/exec?action=summary','_blank')">3. Open API URL Directly</button>
+
+<div id="log">Click a button above to test...</div>
+
+<script>
+function log(msg,color){
+  document.getElementById('log').innerHTML+='<div style="color:'+(color||'#fff')+'">'+msg+'</div>';
+}
+
+function testFetch(){
+  var el=document.getElementById('log');
+  el.innerHTML='';
+  var url='https://script.google.com/macros/s/AKfycbyfUqKRyZlRDgQVtkKUd-oOYDfyvxW7ElWj5O3BdYPUP3zDi-HYOgq7bWAvb94VgBrj/exec?action=summary';
+  var t=Date.now();
+  log('Fetching API...','#4fc3f7');
+  log('URL: '+url.substring(0,70)+'...','#888');
+
+  fetch(url,{redirect:'follow'})
+    .then(function(r){
+      log('Response received! Status: '+r.status+' ('+(Date.now()-t)+'ms)','#39ff14');
+      log('Redirected to: '+r.url.substring(0,80),'#888');
+      return r.text();
+    })
+    .then(function(text){
+      log('Data received! Length: '+text.length+' chars ('+(Date.now()-t)+'ms)','#39ff14');
+      try{
+        var data=JSON.parse(text);
+        log('JSON OK! Products: '+(data.products?data.products.length:0),'#39ff14');
+        log('API IS WORKING!','#39ff14');
+      }catch(e){
+        log('JSON parse error: '+e.message,'#dc2f02');
+        log('Raw: '+text.substring(0,300),'#e09f3e');
+      }
+    })
+    .catch(function(e){
+      log('FETCH FAILED! ('+(Date.now()-t)+'ms)','#dc2f02');
+      log('Error: '+e.message,'#dc2f02');
+      log('Your phone cannot reach Google server via fetch.','#e09f3e');
+    });
+}
+</script>
+</body>
+</html>
