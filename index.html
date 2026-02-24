@@ -101,13 +101,13 @@
     .list-section{margin-top:8px}
     .list-header{font-size:13px;color:#8899aa;font-weight:600;margin-bottom:6px;padding:0 4px}
     .bc-list{max-height:250px;overflow-y:auto}
-    .bc-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#16213e;border-radius:6px;margin-bottom:4px;font-size:12px;font-family:monospace;color:#ccc}
+    .bc-item{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:8px 10px;background:#16213e;border-radius:6px;margin-bottom:4px;font-size:12px;font-family:monospace;color:#ccc;gap:4px}
     .bc-item.scanned{background:#1b4332;color:#39ff14;text-decoration:line-through;opacity:0.6}
     .bc-item.nf-item{background:#3d2e00;color:#e09f3e;border:1px solid #7c5800}
     .bc-item.dp-item{background:#3d0a0a;color:#dc2f02;border:1px solid #6a040f}
     .bc-detail{font-size:11px;color:#8899aa;font-family:-apple-system,sans-serif;max-width:50%;text-align:right}
-    .pc-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;display:inline-block;background:#0f3460;color:#39ff14}
-    .origin-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:6px;display:inline-block}
+    .pc-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;display:inline-block;background:#0f3460;color:#39ff14;white-space:nowrap}
+    .origin-tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;margin-left:4px;display:inline-block;white-space:nowrap}
     .origin-tag.tag-scanned{background:#1b4332;color:#39ff14}
     .origin-tag.tag-nf{background:#3d2e00;color:#e09f3e}
 
@@ -146,15 +146,27 @@
     .details-btn:active{transform:scale(0.98);background:#39ff14;color:#1a1a2e}
 
     /* Person Product Detail Table */
-    .detail-table-header{display:flex;padding:10px 16px;background:#0f3460;border-radius:8px;margin-bottom:6px;font-size:13px;font-weight:700;color:#8899aa}
+    .detail-table-header{display:flex;padding:10px 12px;background:#0f3460;border-radius:8px;margin-bottom:6px;font-size:12px;font-weight:700;color:#8899aa}
     .detail-table-header span{flex:1;text-align:center}
-    .detail-table-header span:first-child{text-align:left}
-    .detail-row{display:flex;padding:12px 16px;background:#16213e;border-radius:8px;margin-bottom:6px;font-size:14px;cursor:pointer;border:1px solid #0f3460;transition:all 0.2s;align-items:center}
+    .detail-table-header span:first-child{flex:2;text-align:left}
+    .detail-row{display:flex;padding:12px;background:#16213e;border-radius:8px;margin-bottom:6px;font-size:14px;cursor:pointer;border:1px solid #0f3460;transition:all 0.2s;align-items:center}
     .detail-row:active{transform:scale(0.98);border-color:#39ff14}
     .detail-row span{flex:1;text-align:center;font-weight:600}
-    .detail-row span:first-child{text-align:left}
-    .detail-row .packed-num{color:#39ff14}
-    .detail-row .checked-num{color:#4fc3f7}
+    .detail-row span:first-child{flex:2;text-align:left;font-size:13px}
+    .detail-row .packed-num{color:#39ff14;font-size:18px}
+    .detail-row .checked-num{color:#4fc3f7;font-size:18px}
+
+    /* Mobile fixes */
+    @media(max-width:480px){
+      .bc-item{font-size:11px;padding:6px 8px}
+      .bc-detail{font-size:10px;max-width:45%}
+      .pc-tag{font-size:9px;padding:1px 4px;margin-left:2px}
+      .origin-tag{font-size:9px;padding:1px 4px;margin-left:2px}
+      .person-summary-counts{gap:20px}
+      .person-summary-col .count-num{font-size:28px}
+      .detail-row{padding:10px}
+      .detail-row span:first-child{font-size:12px}
+    }
   </style>
 </head>
 <body>
@@ -169,7 +181,8 @@
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
       <div class="hint">Paste the URL from Deploy > Web App in your Google Sheet's Apps Script</div>
-      <button class="save-btn" onclick="saveUrl()">Save & Connect</button>
+      <button class="save-btn" id="saveBtn">Save & Connect</button>
+      <div id="debugMsg" style="margin-top:8px;font-size:12px;color:#e09f3e;display:none"></div>
     </div>
   </div>
 
@@ -376,12 +389,15 @@
   </div>
 
 <script>
-console.log('Script loaded OK');
-document.getElementById('statusTxt').textContent='JS loaded - ready';
+try{
+document.getElementById('statusTxt').textContent='JS running';
+document.getElementById('dot').className='dot off';
+}catch(e){}
+
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
 var pendingSave=null;
-var currentPerson=''; // packer number 1-7
-var currentChecker=''; // checker number 1-7
+var currentPerson='';
+var currentChecker='';
 var apiUrl=localStorage.getItem('apiUrl')||'';
 var selectedProduct='';
 var selectedCompany='';
@@ -425,7 +441,10 @@ function nfdpTag(nf,dp){
 // HELPER: Build P/C tag for barcode lists
 function pcTag(packer,checker){
   if(!packer&&!checker) return '';
-  var txt='P'+(packer||'?')+' - C'+(checker||'?');
+  var parts=[];
+  if(packer) parts.push('P'+packer);
+  if(checker) parts.push('C'+checker);
+  var txt=parts.join(' | ');
   return '<span class="pc-tag">'+txt+'</span>';
 }
 
@@ -437,11 +456,24 @@ function showPage(name){
 }
 
 function saveUrl(){
-  var u=document.getElementById('apiUrl').value.trim();
-  if(!u||!u.startsWith('https://script.google.com/')){alert('Please enter a valid Google Apps Script URL');return}
-  apiUrl=u;localStorage.setItem('apiUrl',u);setStatus(true);
-  showPage('products');
-  loadProducts();
+  var dbg=document.getElementById('debugMsg');
+  try{
+    dbg.style.display='block';
+    dbg.textContent='Saving...';
+    var u=document.getElementById('apiUrl').value.trim();
+    dbg.textContent='URL: '+u.substring(0,50)+'...';
+    if(!u){dbg.textContent='Error: URL is empty';return}
+    if(!u.startsWith('https://script.google.com/')){dbg.textContent='Error: URL must start with https://script.google.com/';return}
+    apiUrl=u;
+    localStorage.setItem('apiUrl',u);
+    setStatus(true);
+    dbg.textContent='Saved! Loading products...';
+    showPage('products');
+    loadProducts();
+  }catch(err){
+    dbg.style.display='block';
+    dbg.textContent='Error: '+err.message;
+  }
 }
 
 function setStatus(ok){
@@ -557,8 +589,7 @@ function openPersonSummary(num){
       document.getElementById('personCheckedTotal').textContent=data.checked||0;
     })
     .catch(function(e){
-      document.getElementById('personSummaryLoading').style.display='none';
-      alert('Error loading person data.');
+      document.getElementById('personSummaryLoading').innerHTML='<div style="color:#e09f3e;padding:20px;text-align:center">Error loading person data: '+e.message+'</div>';
     });
 }
 
@@ -1082,6 +1113,15 @@ function resumeScan(){
 document.getElementById('tapOverlay').addEventListener('click',resumeScan);
 document.getElementById('scannerBox').addEventListener('click',resumeScan);
 
+// SAVE BUTTON - using addEventListener as backup for onclick
+document.getElementById('saveBtn').addEventListener('click',function(){
+  try{saveUrl()}catch(e){
+    var d=document.getElementById('debugMsg');
+    d.style.display='block';
+    d.textContent='Click error: '+e.message;
+  }
+});
+
 // PHONE BACK BUTTON
 var currentPage='products';
 var origShowPage=showPage;
@@ -1093,40 +1133,4 @@ showPage=function(name){
 window.addEventListener('popstate',function(e){
   if(currentPage==='scanner'){
     if(!selectedProduct){
-      if(scanner&&isScanning){scanner.stop().then(function(){isScanning=false;document.getElementById('startBtn').style.display='flex';document.getElementById('stopBtn').style.display='none';document.getElementById('reader').innerHTML=''})}
-      document.getElementById('resultCard').style.display='none';
-      document.getElementById('tapOverlay').style.display='none';
-      isPaused=false;
-      origShowPage('products');currentPage='products';loadProducts();
-      history.pushState({page:'products'},null,'');
-    } else {
-      goBackToCompanies();
-      history.pushState({page:'companies'},null,'');
-    }
-  } else if(currentPage==='companies'){
-    goBackToProducts();
-    history.pushState({page:'products'},null,'');
-  } else if(currentPage==='person-companies'){
-    goBackToPersonProducts();
-    history.pushState({page:'person-products'},null,'');
-  } else if(currentPage==='person-products'){
-    goBackToPersonSummary();
-    history.pushState({page:'person-summary'},null,'');
-  } else if(currentPage==='person-summary'){
-    goBackToProducts();
-    history.pushState({page:'products'},null,'');
-  } else if(currentPage==='settings'){
-    if(apiUrl){
-      origShowPage('products');
-      currentPage='products';
-      history.pushState({page:'products'},null,'');
-    }
-  } else {
-    history.pushState({page:'products'},null,'');
-  }
-});
-history.replaceState({page:apiUrl?'products':'settings'},null,'');
-</script>
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-</body>
-</html>
+      if(scanner&&isScanning){scanner.stop().then(function(){isScan
