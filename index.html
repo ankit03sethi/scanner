@@ -398,7 +398,11 @@ var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false
 var pendingSave=null;
 var currentPerson='';
 var currentChecker='';
-var apiUrl=localStorage.getItem('apiUrl')||'https://script.google.com/macros/s/AKfycbzhUgAwYfDn82NzlglKfxHesXBRuFlvm-GmlDVlZpIBmZwnqRUQZSGTB7XMlSfa-4ev/exec';
+var CURRENT_API='https://script.google.com/macros/s/AKfycbzhUgAwYfDn82NzlglKfxHesXBRuFlvm-GmlDVlZpIBmZwnqRUQZSGTB7XMlSfa-4ev/exec';
+var storedUrl=localStorage.getItem('apiUrl')||'';
+// If stored URL is old/different, use the current hardcoded one
+if(storedUrl && storedUrl!==CURRENT_API){localStorage.setItem('apiUrl',CURRENT_API)}
+var apiUrl=CURRENT_API;
 var selectedProduct='';
 var selectedCompany='';
 var remainingBarcodes=[];
@@ -411,7 +415,13 @@ var totalForProduct=0;
 var viewingPerson='';
 var viewingPersonProduct='';
 
-window.onload=function(){
+// Use DOMContentLoaded so we don't wait for external scripts to load
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',initApp);
+} else {
+  initApp();
+}
+function initApp(){
   try{
     if(apiUrl){
       document.getElementById('apiUrl').value=apiUrl;
@@ -427,7 +437,7 @@ window.onload=function(){
     document.getElementById('statusTxt').textContent='Error: '+err.message;
     showPage('settings');
   }
-};
+}
 
 // HELPER: Build Not Found / Duplicates tag string
 function nfdpTag(nf,dp){
@@ -1163,4 +1173,14 @@ window.addEventListener('popstate',function(e){
     if(apiUrl){
       origShowPage('products');
       currentPage='products';
-      
+      history.pushState({page:'products'},null,'');
+    }
+  } else {
+    history.pushState({page:'products'},null,'');
+  }
+});
+history.replaceState({page:apiUrl?'products':'settings'},null,'');
+</script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</body>
+</html>
