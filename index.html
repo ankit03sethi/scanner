@@ -184,8 +184,8 @@
     <div class="sub"><span class="dot" id="dot"></span></div>
   </div>
 
-  <!-- PAGE: SETTINGS (active by default, JS will switch if API URL exists) -->
-  <div class="page active" id="page-settings">
+  <!-- PAGE: SETTINGS -->
+  <div class="page" id="page-settings">
     <div class="setup">
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
@@ -195,8 +195,8 @@
     </div>
   </div>
 
-  <!-- PAGE: PRODUCT SUMMARY -->
-  <div class="page" id="page-products">
+  <!-- PAGE: PRODUCT SUMMARY (active by default since API is hardcoded) -->
+  <div class="page active" id="page-products">
     <div class="loading-page" id="productsLoading"><div class="spinner"></div><div>Loading products...</div></div>
     <div id="productsContent" style="display:none">
       <div class="total-box" style="display:flex;align-items:center;justify-content:space-between">
@@ -437,6 +437,11 @@ try{
   var storedUrl=localStorage.getItem('apiUrl')||'';
   if(storedUrl && storedUrl!==CURRENT_API){localStorage.setItem('apiUrl',CURRENT_API)}
 }catch(e){}
+
+// CRITICAL: Call initApp() HERE before any addEventListener calls
+// Function declarations are hoisted so initApp/showPage/loadProducts are available
+try{initApp()}catch(e){console.error('Early initApp error:',e)}
+
 var selectedProduct='';
 var selectedCompany='';
 var remainingBarcodes=[];
@@ -1164,10 +1169,4 @@ function checkCode(barcode){
 function showResult(r){
   var c=document.getElementById('resultCard');
   var icon=document.getElementById('rIcon');
-  var stat=document.getElementById('rStatus');
-  var details=document.getElementById('rDetails');
-  var code=document.getElementById('rCode');
-  c.className='result';
-
-  if(r.status==='OK'){
-    var parts=(r.details||'Found').split(/[|,]+
+  var stat=document.getElementBy
