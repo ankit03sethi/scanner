@@ -163,8 +163,8 @@
     <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Not configured</span></div>
   </div>
 
-  <!-- PAGE: SETTINGS -->
-  <div class="page" id="page-settings">
+  <!-- PAGE: SETTINGS (active by default, JS will switch if API URL exists) -->
+  <div class="page active" id="page-settings">
     <div class="setup">
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
@@ -394,13 +394,19 @@ var viewingPerson='';
 var viewingPersonProduct='';
 
 window.onload=function(){
-  if(apiUrl){
-    document.getElementById('apiUrl').value=apiUrl;
-    setStatus(true);
-    showPage('products');
-    loadProducts();
-  } else {
-    setStatus(false);
+  try{
+    if(apiUrl){
+      document.getElementById('apiUrl').value=apiUrl;
+      setStatus(true);
+      showPage('products');
+      loadProducts();
+    } else {
+      setStatus(false);
+      showPage('settings');
+    }
+  }catch(err){
+    console.error('Init error:',err);
+    document.getElementById('statusTxt').textContent='Error: '+err.message;
     showPage('settings');
   }
 };
@@ -806,10 +812,4 @@ function startScan(){
   scanner=new Html5Qrcode("reader");
   scanner.start(
     {facingMode:"environment"},
-    {fps:30,qrbox:{width:350,height:220},disableFlip:false,experimentalFeatures:{useBarCodeDetectorIfSupported:true},
-      formatsToSupport:[
-        Html5QrcodeSupportedFormats.QR_CODE,
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeS
+    {fps:30,qrbox:{width:350,height:220},disableFlip:false,experimentalFeatures:{useBarCodeDetec
