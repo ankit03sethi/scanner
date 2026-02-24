@@ -200,7 +200,8 @@
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
       <div class="hint">Paste the URL from Deploy > Web App in your Google Sheet's Apps Script</div>
       <button class="save-btn" onclick="saveUrl()">Save & Connect</button>
-      <div id="debugMsg" style="margin-top:8px;font-size:12px;color:#e09f3e;display:none"></div>
+      <button class="save-btn" style="margin-top:8px;background:#4fc3f7" onclick="testAPI()">Test API Connection</button>
+      <div id="debugMsg" style="margin-top:8px;font-size:12px;color:#e09f3e;word-break:break-all"></div>
     </div>
   </div>
 
@@ -437,7 +438,7 @@ var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false
 var pendingSave=null;
 var currentPerson='';
 var currentChecker='';
-var CURRENT_API='https://script.google.com/macros/s/AKfycbykUo_b86ptTWFjiHX0Up9NApfwVBHpum4NKhQu5HKE91VbLNUgpxVj9GMoFUwhxI5t/exec';
+var CURRENT_API='https://script.google.com/macros/s/AKfycbyfUqKRyZlRDgQVtkKUd-oOYDfyvxW7ElWj5O3BdYPUP3zDi-HYOgq7bWAvb94VgBrj/exec';
 var apiUrl=CURRENT_API;
 
 var selectedProduct='';
@@ -512,6 +513,7 @@ function saveUrl(){
     if(!u){dbg.textContent='Error: URL is empty';return}
     if(!u.startsWith('https://script.google.com/')){dbg.textContent='Error: URL must start with https://script.google.com/';return}
     apiUrl=u;
+    CURRENT_API=u;
     try{localStorage.setItem('apiUrl',u)}catch(e){}
     setStatus(true);
     dbg.textContent='Saved! Loading products...';
@@ -523,6 +525,46 @@ function saveUrl(){
   }
 }
 
+function testAPI(){
+  var dbg=document.getElementById('debugMsg');
+  dbg.style.display='block';
+  var u=document.getElementById('apiUrl').value.trim()||apiUrl;
+  if(!u){dbg.innerHTML='<span style="color:#dc2f02">No URL to test</span>';return}
+  dbg.innerHTML='<span style="color:#4fc3f7">Testing: '+u.substring(0,60)+'...</span><br>';
+  var startTime=Date.now();
+
+  // Test 1: Simple fetch to check basic connectivity
+  dbg.innerHTML+='<span style="color:#fff">Step 1: Sending fetch request...</span><br>';
+  fetch(u+'?action=summary',{redirect:'follow'})
+    .then(function(r){
+      var elapsed=Date.now()-startTime;
+      dbg.innerHTML+='<span style="color:#39ff14">Step 2: Got response! Status: '+r.status+' ('+elapsed+'ms)</span><br>';
+      dbg.innerHTML+='<span style="color:#fff">Step 3: URL after redirect: '+r.url.substring(0,80)+'...</span><br>';
+      dbg.innerHTML+='<span style="color:#fff">Step 4: Reading JSON...</span><br>';
+      return r.text();
+    })
+    .then(function(text){
+      var elapsed=Date.now()-startTime;
+      dbg.innerHTML+='<span style="color:#39ff14">Step 5: Got data! ('+elapsed+'ms) Length: '+text.length+' chars</span><br>';
+      try{
+        var data=JSON.parse(text);
+        dbg.innerHTML+='<span style="color:#39ff14">Step 6: JSON parsed OK! Products: '+(data.products?data.products.length:0)+'</span><br>';
+        dbg.innerHTML+='<span style="color:#39ff14;font-weight:700">API IS WORKING!</span>';
+      }catch(e){
+        dbg.innerHTML+='<span style="color:#dc2f02">Step 6: JSON parse error: '+e.message+'</span><br>';
+        dbg.innerHTML+='<span style="color:#e09f3e">Raw response (first 200 chars): '+text.substring(0,200)+'</span>';
+      }
+    })
+    .catch(function(e){
+      var elapsed=Date.now()-startTime;
+      dbg.innerHTML+='<span style="color:#dc2f02">FETCH FAILED after '+elapsed+'ms</span><br>';
+      dbg.innerHTML+='<span style="color:#dc2f02">Error: '+e.message+'</span><br>';
+      dbg.innerHTML+='<span style="color:#e09f3e">This means your phone cannot reach the Google server.</span><br>';
+      dbg.innerHTML+='<span style="color:#fff">Try: 1) Check internet 2) Try opening this URL directly in your phone browser: </span><br>';
+      dbg.innerHTML+='<a href="'+u+'?action=summary" target="_blank" style="color:#4fc3f7;word-break:break-all">'+u+'?action=summary</a>';
+    });
+}
+
 function setStatus(ok){
   document.getElementById('dot').className='dot '+(ok?'on':'off');
 }
@@ -531,10 +573,26 @@ function setStatus(ok){
 function loadProducts(){
   document.getElementById('productsLoading').style.display='block';
   document.getElementById('productsContent').style.display='none';
+  var loadDone=false;
+  // Debug: show timeout message if fetch hangs on mobile
+  setTimeout(function(){
+    if(!loadDone){
+      document.getElementById('productsLoading').innerHTML='<div class="spinner"></div><div>Loading products...</div><div style="color:#e09f3e;font-size:12px;margin-top:10px">Slow connection - still waiting...</div>';
+    }
+  },8000);
+  setTimeout(function(){
+    if(!loadDone){
+      document.getElementById('productsLoading').innerHTML='<div style="color:#dc2f02;padding:20px;text-align:center">Could not connect to server after 20 seconds.<br><br><button onclick="loadProducts()" style="padding:10px 20px;background:#39ff14;color:#1a1a2e;border:none;border-radius:8px;font-weight:700;font-size:14px">Retry</button><br><br><button onclick="showPage(\'settings\')" style="padding:8px 16px;background:#4fc3f7;color:#1a1a2e;border:none;border-radius:8px;font-weight:600;font-size:13px">Go to Settings & Test API</button></div>';
+    }
+  },20000);
 
   fetch(apiUrl+'?action=summary',{redirect:'follow'})
-    .then(function(r){return r.json()})
+    .then(function(r){
+      if(!r.ok) throw new Error('HTTP '+r.status);
+      return r.json();
+    })
     .then(function(data){
+      loadDone=true;
       document.getElementById('productsLoading').style.display='none';
       document.getElementById('productsContent').style.display='block';
       var t=data.total||0;
@@ -562,8 +620,8 @@ function loadProducts(){
       }
     })
     .catch(function(e){
-      document.getElementById('productsLoading').style.display='none';
-      alert('Error loading products. Check API URL.');
+      loadDone=true;
+      document.getElementById('productsLoading').innerHTML='<div style="color:#dc2f02;padding:20px;text-align:center">Error: '+e.message+'<br><br><button onclick="loadProducts()" style="padding:10px 20px;background:#39ff14;color:#1a1a2e;border:none;border-radius:8px;font-weight:700;font-size:14px">Retry</button><br><br><button onclick="origShowPage(\'settings\')" style="padding:8px 16px;background:#4fc3f7;color:#1a1a2e;border:none;border-radius:8px;font-weight:600;font-size:13px">Go to Settings & Test API</button></div>';
     });
 }
 
@@ -1216,89 +1274,4 @@ function checkCode(barcode){
 }
 
 // SHOW RESULT
-function showResult(r){
-  var c=document.getElementById('resultCard');
-  var icon=document.getElementById('rIcon');
-  var stat=document.getElementById('rStatus');
-  var details=document.getElementById('rDetails');
-  var code=document.getElementById('rCode');
-  c.className='result';
-
-  if(r.status==='OK'){
-    var parts=(r.details||'Found').split(/[|,]+/);
-    var firstWord=parts[0].trim().split(/\s+/)[0]||'Found';
-    var secondPart=parts.length>1?parts[1].trim():'';
-    c.classList.add('ok');icon.textContent='\u2705';stat.textContent=firstWord;
-    beep('ok');speak(firstWord);if(navigator.vibrate)navigator.vibrate([100,50,100]);
-    details.textContent=secondPart;
-  } else if(r.status==='NO'){
-    c.classList.add('no');icon.textContent='\u274C';stat.textContent='NOT FOUND';
-    beep('no');speak('Not Found');if(navigator.vibrate)navigator.vibrate([300]);c.classList.add('vib');
-    details.textContent=r.details||'';
-  } else if(r.status==='DUPLICATE'){
-    var originTag=r.origin==='NF'?' (was NF)':' (was Scanned)';
-    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
-    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
-    details.innerHTML='<span class="origin-tag '+(r.origin==='NF'?'tag-nf':'tag-scanned')+'">'+((r.origin||'Scanned'))+'</span> '+(r.details||'');
-  } else if(r.status==='NF_DUPLICATE'){
-    c.classList.add('duplicate');icon.textContent='\u26A0\uFE0F';stat.textContent='DUPLICATE';
-    beep('duplicate');speak('Duplicate');if(navigator.vibrate)navigator.vibrate([100,100,100,100,100]);c.classList.add('vib');
-    details.innerHTML='<span class="origin-tag tag-nf">NF</span> '+(r.details||'');
-  } else {
-    c.classList.add('error');icon.textContent='\u2699\uFE0F';stat.textContent='ERROR';
-    details.textContent=r.details||'';
-  }
-  code.textContent=r.barcode?'Barcode: '+r.barcode:'';
-  c.style.display='block';
-  setTimeout(function(){c.classList.remove('vib')},500);
-}
-
-// SAVE CONFIRMATION
-function showSaveButton(btnClass,btnText){
-  var area=document.getElementById('saveConfirmArea');
-  var btn=document.getElementById('saveConfirmBtn');
-  btn.className='save-confirm-btn '+btnClass;
-  btn.textContent=btnText;
-  area.style.display='flex';
-}
-
-function confirmSave(){
-  if(!pendingSave) return;
-  var ps=pendingSave;
-  pendingSave=null;
-  document.getElementById('saveConfirmArea').style.display='none';
-  // Resume scanning immediately after save
-  document.getElementById('tapOverlay').style.display='none';
-  document.getElementById('resultCard').style.display='none';
-  isPaused=false;
-  lastBarcode='';
-  if(scanner&&isScanning){
-    try{scanner.resume()}catch(e){}
-  }
-
-  var url=apiUrl+'?action=savescan&barcode='+encodeURIComponent(ps.barcode)+'&saveStatus='+encodeURIComponent(ps.saveStatus)+'&details='+encodeURIComponent(ps.details)+'&person='+encodeURIComponent(currentPerson)+'&checker='+encodeURIComponent(currentChecker);
-  fetch(url,{redirect:'follow'})
-    .then(function(r){return r.json()})
-    .then(function(resp){
-      if(resp.status==='saved'){
-        if(ps.saveStatus==='NF'){
-          var alreadyNF=false;
-          for(var i=0;i<nfItems.length;i++){if(nfItems[i].barcode===ps.barcode){alreadyNF=true;break}}
-          if(!alreadyNF) nfItems.unshift({barcode:ps.barcode,details:ps.details,packer:currentPerson,checker:currentChecker});
-          updateCounter();
-          renderNFList();
-        } else if(ps.saveStatus==='DUPLICATE'||ps.saveStatus==='NF_DUPLICATE'){
-          var origin=(ps.saveStatus==='NF_DUPLICATE')?'NF':(ps.origin||'Scanned');
-          dpItems.unshift({barcode:ps.barcode,details:ps.details,origin:origin,packer:currentPerson,checker:currentChecker});
-          updateCounter();
-          renderDPList();
-        }
-      }
-    }).catch(function(e){
-      alert('Error saving');
-    });
-}
-
-function skipSave(){
-  pendingSave=null;
-  document.getElementById('saveConfirmArea').style
+function showRe
