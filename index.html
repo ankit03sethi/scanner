@@ -199,10 +199,8 @@
       <label>Google Apps Script Web App URL</label>
       <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/..../exec">
       <div class="hint">Paste the URL from Deploy > Web App in your Google Sheet's Apps Script</div>
-      <button class="save-btn" onclick="saveUrl()">Save & Connect</button>
-      <button class="save-btn" style="margin-top:8px;background:#4fc3f7" onclick="testAPI()">Test API Connection</button>
-      <button class="save-btn" style="margin-top:8px;background:#e09f3e" onclick="alert('JS is working! API URL: '+((typeof apiUrl!=='undefined')?apiUrl.substring(0,60):'NOT SET'))">Check JS Works</button>
-      <div id="debugMsg" style="margin-top:8px;font-size:12px;color:#e09f3e;word-break:break-all"></div>
+      <button class="save-btn" id="saveBtn">Save & Connect</button>
+      <div id="debugMsg" style="margin-top:8px;font-size:12px;color:#e09f3e;display:none"></div>
     </div>
   </div>
 
@@ -435,12 +433,20 @@
   </div>
 
 <script>
+try{
+document.getElementById('dot').className='dot off';
+}catch(e){}
+
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
 var pendingSave=null;
 var currentPerson='';
 var currentChecker='';
-var CURRENT_API='https://script.google.com/macros/s/AKfycbw0N-4mjxPq-h14XD4afsxmjO5a7E8aOGg-beQOk5dZtyR15AIASE5_hudgwLYaiq7p/exec';
+var CURRENT_API='https://script.google.com/macros/s/AKfycbwr2BMsOyxab-jQVmpBflk9m0mRnJYqRWGNOlVtmew1z0cYKvbJg7bZHBWucu9TQJIm/exec';
 var apiUrl=CURRENT_API;
+try{
+  var storedUrl=localStorage.getItem('apiUrl')||'';
+  if(storedUrl && storedUrl!==CURRENT_API){localStorage.setItem('apiUrl',CURRENT_API)}
+}catch(e){}
 
 var selectedProduct='';
 var selectedCompany='';
@@ -453,30 +459,17 @@ var totalForProduct=0;
 // Person detail page state
 var viewingPerson='';
 var viewingPersonProduct='';
-
-function saveNav(pg,ex){try{sessionStorage.setItem('np',pg);if(ex)sessionStorage.setItem('ne',JSON.stringify(ex));else sessionStorage.removeItem('ne')}catch(e){}}
-
-window.onload=function(){
+function initApp(){
   if(apiUrl){
     document.getElementById('apiUrl').value=apiUrl;
     setStatus(true);
     showPage('products');
     loadProducts();
-    // Restore last page on refresh
-    try{
-      var np=sessionStorage.getItem('np');
-      var ne=sessionStorage.getItem('ne');
-      var ex=ne?JSON.parse(ne):null;
-      if(np==='companies'&&ex&&ex.p){selectedProduct=ex.p;openCompanyPage(ex.p,0,0);loadCompanies(ex.p)}
-      else if(np==='person-summary'&&ex&&ex.n){openPersonSummary(ex.n)}
-      else if(np==='person-products'&&ex&&ex.n){viewingPerson=ex.n;openPersonProducts()}
-      else if(np==='person-companies'&&ex&&ex.n&&ex.p){viewingPerson=ex.n;openPersonCompanies(ex.p)}
-    }catch(e){}
   } else {
     setStatus(false);
     showPage('settings');
   }
-};
+}
 
 // HELPER: Build Not Found / Duplicates tag string
 function nfdpTag(nf,dp){
@@ -514,7 +507,6 @@ function saveUrl(){
     if(!u){dbg.textContent='Error: URL is empty';return}
     if(!u.startsWith('https://script.google.com/')){dbg.textContent='Error: URL must start with https://script.google.com/';return}
     apiUrl=u;
-    CURRENT_API=u;
     try{localStorage.setItem('apiUrl',u)}catch(e){}
     setStatus(true);
     dbg.textContent='Saved! Loading products...';
@@ -526,46 +518,6 @@ function saveUrl(){
   }
 }
 
-function testAPI(){
-  var dbg=document.getElementById('debugMsg');
-  dbg.style.display='block';
-  var u=document.getElementById('apiUrl').value.trim()||apiUrl;
-  if(!u){dbg.innerHTML='<span style="color:#dc2f02">No URL to test</span>';return}
-  dbg.innerHTML='<span style="color:#4fc3f7">Testing: '+u.substring(0,60)+'...</span><br>';
-  var startTime=Date.now();
-
-  // Test 1: Simple fetch to check basic connectivity
-  dbg.innerHTML+='<span style="color:#fff">Step 1: Sending fetch request...</span><br>';
-  fetch(u+'?action=summary',{redirect:'follow'})
-    .then(function(r){
-      var elapsed=Date.now()-startTime;
-      dbg.innerHTML+='<span style="color:#39ff14">Step 2: Got response! Status: '+r.status+' ('+elapsed+'ms)</span><br>';
-      dbg.innerHTML+='<span style="color:#fff">Step 3: URL after redirect: '+r.url.substring(0,80)+'...</span><br>';
-      dbg.innerHTML+='<span style="color:#fff">Step 4: Reading JSON...</span><br>';
-      return r.text();
-    })
-    .then(function(text){
-      var elapsed=Date.now()-startTime;
-      dbg.innerHTML+='<span style="color:#39ff14">Step 5: Got data! ('+elapsed+'ms) Length: '+text.length+' chars</span><br>';
-      try{
-        var data=JSON.parse(text);
-        dbg.innerHTML+='<span style="color:#39ff14">Step 6: JSON parsed OK! Products: '+(data.products?data.products.length:0)+'</span><br>';
-        dbg.innerHTML+='<span style="color:#39ff14;font-weight:700">API IS WORKING!</span>';
-      }catch(e){
-        dbg.innerHTML+='<span style="color:#dc2f02">Step 6: JSON parse error: '+e.message+'</span><br>';
-        dbg.innerHTML+='<span style="color:#e09f3e">Raw response (first 200 chars): '+text.substring(0,200)+'</span>';
-      }
-    })
-    .catch(function(e){
-      var elapsed=Date.now()-startTime;
-      dbg.innerHTML+='<span style="color:#dc2f02">FETCH FAILED after '+elapsed+'ms</span><br>';
-      dbg.innerHTML+='<span style="color:#dc2f02">Error: '+e.message+'</span><br>';
-      dbg.innerHTML+='<span style="color:#e09f3e">This means your phone cannot reach the Google server.</span><br>';
-      dbg.innerHTML+='<span style="color:#fff">Try: 1) Check internet 2) Try opening this URL directly in your phone browser: </span><br>';
-      dbg.innerHTML+='<a href="'+u+'?action=summary" target="_blank" style="color:#4fc3f7;word-break:break-all">'+u+'?action=summary</a>';
-    });
-}
-
 function setStatus(ok){
   document.getElementById('dot').className='dot '+(ok?'on':'off');
 }
@@ -574,26 +526,10 @@ function setStatus(ok){
 function loadProducts(){
   document.getElementById('productsLoading').style.display='block';
   document.getElementById('productsContent').style.display='none';
-  var loadDone=false;
-  // Debug: show timeout message if fetch hangs on mobile
-  setTimeout(function(){
-    if(!loadDone){
-      document.getElementById('productsLoading').innerHTML='<div class="spinner"></div><div>Loading products...</div><div style="color:#e09f3e;font-size:12px;margin-top:10px">Slow connection - still waiting...</div>';
-    }
-  },8000);
-  setTimeout(function(){
-    if(!loadDone){
-      document.getElementById('productsLoading').innerHTML='<div style="color:#dc2f02;padding:20px;text-align:center">Could not connect to server after 20 seconds.<br><br><button onclick="loadProducts()" style="padding:10px 20px;background:#39ff14;color:#1a1a2e;border:none;border-radius:8px;font-weight:700;font-size:14px">Retry</button><br><br><button onclick="showPage(\'settings\')" style="padding:8px 16px;background:#4fc3f7;color:#1a1a2e;border:none;border-radius:8px;font-weight:600;font-size:13px">Go to Settings & Test API</button></div>';
-    }
-  },20000);
 
   fetch(apiUrl+'?action=summary',{redirect:'follow'})
-    .then(function(r){
-      if(!r.ok) throw new Error('HTTP '+r.status);
-      return r.json();
-    })
+    .then(function(r){return r.json()})
     .then(function(data){
-      loadDone=true;
       document.getElementById('productsLoading').style.display='none';
       document.getElementById('productsContent').style.display='block';
       var t=data.total||0;
@@ -621,8 +557,8 @@ function loadProducts(){
       }
     })
     .catch(function(e){
-      loadDone=true;
-      document.getElementById('productsLoading').innerHTML='<div style="color:#dc2f02;padding:20px;text-align:center">Error: '+e.message+'<br><br><button onclick="loadProducts()" style="padding:10px 20px;background:#39ff14;color:#1a1a2e;border:none;border-radius:8px;font-weight:700;font-size:14px">Retry</button><br><br><button onclick="origShowPage(\'settings\')" style="padding:8px 16px;background:#4fc3f7;color:#1a1a2e;border:none;border-radius:8px;font-weight:600;font-size:13px">Go to Settings & Test API</button></div>';
+      document.getElementById('productsLoading').style.display='none';
+      alert('Error loading products. Check API URL.');
     });
 }
 
@@ -630,7 +566,6 @@ function loadProducts(){
 function openCompanyPage(product,scanned,total){
   selectedProduct=product;
   showPage('companies');
-  saveNav('companies',{p:product});
   document.getElementById('companyProductName').textContent=product;
   document.getElementById('companyProductCount').textContent=scanned+'/'+total;
   document.getElementById('companyNFDP').innerHTML='';
@@ -691,13 +626,13 @@ function goHome(){
   selectedCompany='';
   showPage('products');
   loadProducts();
-  saveNav('products');
+
 }
 
 function goBackToProducts(){
   showPage('products');
   loadProducts();
-  saveNav('products');
+
 }
 
 // ==========================================
@@ -707,7 +642,7 @@ function goBackToProducts(){
 function openPersonSummary(num){
   viewingPerson=String(num);
   showPage('person-summary');
-  saveNav('person-summary',{n:viewingPerson});
+
   document.getElementById('personSummaryTitle').textContent='Person '+viewingPerson;
   document.getElementById('personSummaryLoading').style.display='block';
   document.getElementById('personSummaryContent').style.display='none';
@@ -726,7 +661,7 @@ function openPersonSummary(num){
 
 function openPersonProducts(){
   showPage('person-products');
-  saveNav('person-products',{n:viewingPerson});
+
   document.getElementById('personProductsTitle').textContent='Person '+viewingPerson+' - Details';
   document.getElementById('personProductsLoading').style.display='block';
   document.getElementById('personProductsContent').style.display='none';
@@ -760,7 +695,7 @@ function openPersonProducts(){
 function openPersonCompanies(product){
   viewingPersonProduct=product;
   showPage('person-companies');
-  saveNav('person-companies',{n:viewingPerson,p:product});
+
   document.getElementById('personCompaniesTitle').textContent=product+' - Companies';
   document.getElementById('personCompaniesLoading').style.display='block';
   document.getElementById('personCompaniesContent').style.display='none';
@@ -1387,6 +1322,15 @@ function resumeScan(){
 try{document.getElementById('tapOverlay').addEventListener('click',resumeScan)}catch(e){}
 try{document.getElementById('scannerBox').addEventListener('click',resumeScan)}catch(e){}
 
+// SAVE BUTTON - using addEventListener as backup for onclick
+try{document.getElementById('saveBtn').addEventListener('click',function(){
+  try{saveUrl()}catch(e){
+    var d=document.getElementById('debugMsg');
+    d.style.display='block';
+    d.textContent='Click error: '+e.message;
+  }
+})}catch(e){}
+
 // PHONE BACK BUTTON
 var currentPage='products';
 var origShowPage=showPage;
@@ -1403,37 +1347,41 @@ window.addEventListener('popstate',function(e){
       document.getElementById('tapOverlay').style.display='none';
       isPaused=false;
       origShowPage('products');currentPage='products';loadProducts();
-      history.pushState({page:'products'},null,'');
+      try{history.pushState({page:'products'},null,'')}catch(e){}
     } else {
       goBackToCompanies();
-      history.pushState({page:'companies'},null,'');
+      try{history.pushState({page:'companies'},null,'')}catch(e){}
     }
   } else if(currentPage==='companies'){
     goBackToProducts();
-    history.pushState({page:'products'},null,'');
+    try{history.pushState({page:'products'},null,'')}catch(e){}
   } else if(currentPage==='person-companies'){
     goBackToPersonProducts();
-    history.pushState({page:'person-products'},null,'');
+    try{history.pushState({page:'person-products'},null,'')}catch(e){}
   } else if(currentPage==='person-products'){
     goBackToPersonSummary();
-    history.pushState({page:'person-summary'},null,'');
+    try{history.pushState({page:'person-summary'},null,'')}catch(e){}
   } else if(currentPage==='person-summary'){
     goBackToProducts();
-    history.pushState({page:'products'},null,'');
+    try{history.pushState({page:'products'},null,'')}catch(e){}
   } else if(currentPage==='status-list'){
     goBackToProducts();
-    history.pushState({page:'products'},null,'');
+    try{history.pushState({page:'products'},null,'')}catch(e){}
   } else if(currentPage==='settings'){
     if(apiUrl){
       origShowPage('products');
       currentPage='products';
-      history.pushState({page:'products'},null,'');
+      try{history.pushState({page:'products'},null,'')}catch(e){}
     }
   } else {
-    history.pushState({page:'products'},null,'');
+    try{history.pushState({page:'products'},null,'')}catch(e){}
   }
 });
-try{history.replaceState({page:apiUrl?'products':'settings'},null,'')}catch(e){}
+// Init app when page fully loads (critical for mobile)
+window.onload=function(){
+  try{history.replaceState({page:apiUrl?'products':'settings'},null,'')}catch(e){}
+  initApp();
+};
 </script>
 </body>
 </html>
