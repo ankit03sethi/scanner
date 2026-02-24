@@ -15,7 +15,7 @@
     .header h1{font-size:18px;font-weight:600}
     .header .sub{font-size:11px;color:#8899aa;margin-top:3px}
     .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
-    .dot.on{background:#39ff14}.dot.off{background:#dc2f02}
+    .dot.on{background:#39ff14;box-shadow:0 0 6px #39ff14}.dot.off{background:#ff073a;box-shadow:0 0 6px #ff073a}
 
     /* Pages */
     .page{display:none;margin:10px}
@@ -31,8 +31,11 @@
     /* Product Summary */
     .total-box{background:linear-gradient(135deg,#0f3460,#16213e);padding:20px;border-radius:12px;text-align:center;margin-bottom:12px}
     .total-num{font-size:42px;font-weight:700;color:#39ff14}
-    .total-label{font-size:13px;color:#39ff14;margin-top:4px;font-weight:600}
-    .total-nfdp{font-size:14px;margin-top:6px;font-weight:600}
+    .total-stats{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+    .stat-line{font-size:16px;font-weight:700}
+    .stat-line.stat-ok{color:#39ff14}
+    .stat-line.stat-nf{color:#e09f3e}
+    .stat-line.stat-dp{color:#dc2f02}
     .nf-tag{color:#e09f3e}
     .dp-tag{color:#dc2f02}
     .product-list{list-style:none}
@@ -172,7 +175,7 @@
 <body>
   <div class="header">
     <h1>Barcode Scanner</h1>
-    <div class="sub"><span class="dot" id="dot"></span><span id="statusTxt">Not configured</span></div>
+    <div class="sub"><span class="dot" id="dot"></span></div>
   </div>
 
   <!-- PAGE: SETTINGS (active by default, JS will switch if API URL exists) -->
@@ -193,8 +196,11 @@
       <div class="total-box" style="display:flex;align-items:center;justify-content:space-between">
         <div style="flex:1;text-align:center">
           <div class="total-num" id="totalCount">0</div>
-          <div class="total-label" id="totalLabel">Successful - 0</div>
-          <div class="total-nfdp" id="totalNFDP"></div>
+          <div class="total-stats" id="totalStats">
+            <div class="stat-line stat-ok" id="statOk">Successful - 0</div>
+            <div class="stat-line stat-nf" id="statNf" style="display:none">Not Found - 0</div>
+            <div class="stat-line stat-dp" id="statDp" style="display:none">Duplicates - 0</div>
+          </div>
         </div>
         <button class="scan-all-btn" onclick="scanAllGlobal()">Scan All</button>
       </div>
@@ -210,7 +216,6 @@
         <button class="person-row-btn" onclick="openPersonSummary(7)">7</button>
       </div>
     </div>
-    <div class="settings-link"><button onclick="showPage('settings')">Settings</button></div>
   </div>
 
   <!-- PAGE: PERSON SUMMARY -->
@@ -390,7 +395,6 @@
 
 <script>
 try{
-document.getElementById('statusTxt').textContent='JS running';
 document.getElementById('dot').className='dot off';
 }catch(e){}
 
@@ -415,12 +419,8 @@ var totalForProduct=0;
 var viewingPerson='';
 var viewingPersonProduct='';
 
-// Use DOMContentLoaded so we don't wait for external scripts to load
-if(document.readyState==='loading'){
-  document.addEventListener('DOMContentLoaded',initApp);
-} else {
-  initApp();
-}
+// Init immediately - all DOM elements exist above this script
+initApp();
 function initApp(){
   try{
     if(apiUrl){
@@ -434,7 +434,6 @@ function initApp(){
     }
   }catch(err){
     console.error('Init error:',err);
-    document.getElementById('statusTxt').textContent='Error: '+err.message;
     showPage('settings');
   }
 }
@@ -488,7 +487,6 @@ function saveUrl(){
 
 function setStatus(ok){
   document.getElementById('dot').className='dot '+(ok?'on':'off');
-  document.getElementById('statusTxt').textContent=ok?'Connected to Google Sheets':'Not configured';
 }
 
 // LOAD PRODUCTS
@@ -503,9 +501,14 @@ function loadProducts(){
       document.getElementById('productsContent').style.display='block';
       var t=data.total||0;
       var ts=data.totalScanned||0;
+      var tnf=data.totalNF||0;
+      var tdp=data.totalDP||0;
       document.getElementById('totalCount').textContent=ts+'/'+t;
-      document.getElementById('totalLabel').textContent='Successful - '+ts;
-      document.getElementById('totalNFDP').innerHTML=nfdpTag(data.totalNF||0,data.totalDP||0);
+      document.getElementById('statOk').textContent='Successful - '+ts;
+      document.getElementById('statNf').textContent='Not Found - '+tnf;
+      document.getElementById('statNf').style.display=tnf?'block':'none';
+      document.getElementById('statDp').textContent='Duplicates - '+tdp;
+      document.getElementById('statDp').style.display=tdp?'block':'none';
 
       var list=document.getElementById('productList');
       list.innerHTML='';
@@ -1171,8 +1174,4 @@ window.addEventListener('popstate',function(e){
       history.pushState({page:'products'},null,'');
     } else {
       goBackToCompanies();
-      history.pushState({page:'companies'},null,'');
-    }
-  } else if(currentPage==='companies'){
-    goBackToProducts();
-    history.pushState({page:'product
+      history.pushState({page:'co
