@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a2e">
-  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#1a1a2e;color:#eee;min-height:100vh;overflow-x:hidden}
@@ -376,6 +376,7 @@
   </div>
 
 <script>
+console.log('Script loaded OK');
 var scanner=null,isScanning=false,lastBarcode='',isChecking=false,isPaused=false;
 var pendingSave=null;
 var currentPerson=''; // packer number 1-7
@@ -812,4 +813,4 @@ function startScan(){
   scanner=new Html5Qrcode("reader");
   scanner.start(
     {facingMode:"environment"},
-    {fps:30,qrbox:{width:350,height:220},disableFlip:false,experimentalFeatures:{useBarCodeDetec
+    {fps:30,qrbox:{width:350,height:220},disableFlip:fals
